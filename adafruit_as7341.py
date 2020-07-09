@@ -77,6 +77,7 @@ _AS7341_CFG0 = const(
     0xA9
 )  # Sets Low power mode, Register bank, and Trigger lengthening
 _AS7341_CFG1 = const(0xAA)  # Controls ADC Gain
+_AS7341_CFG6 = const(0xAF) # Used to configure Smux
 _AS7341_CFG9 = const(0xB2)  # flicker detect and SMUX command system ints
 _AS7341_CFG12 = const(0xB5)  # ADC channel for interrupts, persistence and auto-gain
 _AS7341_PERS = const(
@@ -168,6 +169,10 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _power_enabled = RWBit(_AS7341_ENABLE, 0)
 
     _low_bank_active = RWBit(_AS7341_CFG0, 4)
+    _smux_command = RWBits(2, _AS7341_CFG6, 3)
+
+    _channel_0_data = UnaryStruct(_AS7341_CH0_DATA_L, "<H")
+
 
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
@@ -182,14 +187,19 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     * @param astep_value Integration time step size in 2.78 microsecon increments
     * Step size is `(astep_value+1) * 2.78 uS`
     """
-    gain = UnaryStruct(_AS7341_CFG1, "<B")
+    _gain = UnaryStruct(_AS7341_CFG1, "<B")
     """The ADC gain multiplier
     *
     * @param gain_value The gain amount. must be an `as7341_gain_t`
     * @return true: success false: failure
     */
     """
-
+    _data_ready_bit = RWBit(_AS7341_STATUS2, 6)
+    """
+ * @brief
+ *
+ * @return true: success false: failure
+    """
     def __init__(self, i2c_bus, address=_AS7341_I2CADDR_DEFAULT):
 
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
@@ -215,13 +225,56 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
+    def f1f4_clear_nir(self):
+        self._write_register(0x00, 0x30)# F3 left set to ADC2
+        self._write_register(0x01, 0x01)# F1 left set to ADC0
+        self._write_register(0x02, 0x00)# Reserved or disabled
+        self._write_register(0x03, 0x00)# F8 left disabled
+        self._write_register(0x04, 0x00)# F6 left disabled
+        self._write_register(0x05, 0x42)# F4 left connected to ADC3/f2 left connected to ADC1
+        self._write_register(0x06, 0x00)# F5 left disbled
+        self._write_register(0x07, 0x00)# F7 left disbled
+        self._write_register(0x08, 0x50)# CLEAR connected to ADC4
+        self._write_register(0x09, 0x00)# F5 right disabled
+        self._write_register(0x0A, 0x00)# F7 right disabled
+        self._write_register(0x0B, 0x00)# Reserved or disabled
+        self._write_register(0x0C, 0x20)# F2 right connected to ADC1
+        self._write_register(0x0D, 0x04)# F4 right connected to ADC3
+        self._write_register(0x0E, 0x00)# F6/F7 right disabled
+        self._write_register(0x0F, 0x30)# F3 right connected to AD2
+        self._write_register(0x10, 0x01)# F1 right connected to AD0
+        self._write_register(0x11, 0x50)# CLEAR right connected to AD4
+        self._write_register(0x12, 0x00)# Reserved or disabled
+        self._write_register(0x13, 0x06)# NIR connected to ADC5
+    
+    """
+     * @brief Returns the ADC data for a given channel
+ *
+ * @param channel The ADC channel to read
+ * @return uint16_t The measured data for the currently configured sensor
+ */
+    """
 
-    # @property
-    # def atime(self):
-    #     """The integration time step count.
-    #     Total integration time will be `(ATIME + 1) * (ASTEP + 1) * 2.78µS` *
-    #     """
+uint16_t Adafruit_AS7341::readChannel(as7341_channel_t channel) {
+  // each channel has two bytes, so offset by two for each next channel
+  Adafruit_BusIO_Register channel_data_reg = Adafruit_BusIO_Register(
+      i2c_dev, (AS7341_CH0_DATA_L + 2 * channel), 2, LSBFIRST);
 
+  return channel_data_reg.read();
+    @property
+    def gain(self):
+        """The ADC gain multiplier
+        *
+        * @param gain_value The gain amount. must be an `as7341_gain_t`
+        * @return true: success false: failure
+        */
+        """
+        return self._gain
+    @gain.setter
+    def gain(self, gain_value):
+        if not Gain.is_valid(gain_value):
+            raise AttributeError("`gain` must be a valid `adafruit_as7341.Gain`")
+        self._gain = gain_value
     @property
     def _smux_enabled(self):
         return self._smux_enable_bit
