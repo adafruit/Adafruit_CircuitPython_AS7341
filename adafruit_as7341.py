@@ -32,7 +32,7 @@ Implementation Notes
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AS7341.git"
-from time import sleep
+from time import sleep, monotonic
 from micropython import const
 import adafruit_bus_device.i2c_device as i2c_device
 
@@ -77,7 +77,7 @@ _AS7341_CFG0 = const(
     0xA9
 )  # Sets Low power mode, Register bank, and Trigger lengthening
 _AS7341_CFG1 = const(0xAA)  # Controls ADC Gain
-_AS7341_CFG6 = const(0xAF) # Used to configure Smux
+_AS7341_CFG6 = const(0xAF)  # Used to configure Smux
 _AS7341_CFG9 = const(0xB2)  # flicker detect and SMUX command system ints
 _AS7341_CFG12 = const(0xB5)  # ADC channel for interrupts, persistence and auto-gain
 _AS7341_PERS = const(
@@ -178,7 +178,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _channel_4_data = UnaryStruct(_AS7341_CH4_DATA_L, "<H")
     _channel_5_data = UnaryStruct(_AS7341_CH5_DATA_L, "<H")
 
-
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
     _cfg0 = UnaryStruct(_AS7341_CFG0, "<B")
@@ -205,6 +204,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
  *
  * @return true: success false: failure
     """
+
     def __init__(self, i2c_bus, address=_AS7341_I2CADDR_DEFAULT):
 
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
@@ -223,6 +223,14 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def reset(self):
         """Resets the internal registers and restores the default settings"""
 
+    def wait_for_data(self, timeout=1.0):
+        """Wait for sensor data to be ready"""
+        start = monotonic()
+        while not self._data_ready_bit:
+            if monotonic() - start > timeout:
+                raise RuntimeError("Timeout occoured waiting for sensor data")
+            sleep(0.001)
+
     def _write_register(self, addr, data):
 
         self._buffer[0] = addr
@@ -230,42 +238,57 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
-    def f1f4_clear_nir(self):
-        self._write_register(0x00, 0x30)# F3 left set to ADC2
-        self._write_register(0x01, 0x01)# F1 left set to ADC0
-        self._write_register(0x02, 0x00)# Reserved or disabled
-        self._write_register(0x03, 0x00)# F8 left disabled
-        self._write_register(0x04, 0x00)# F6 left disabled
-        self._write_register(0x05, 0x42)# F4 left connected to ADC3/f2 left connected to ADC1
-        self._write_register(0x06, 0x00)# F5 left disbled
-        self._write_register(0x07, 0x00)# F7 left disbled
-        self._write_register(0x08, 0x50)# CLEAR connected to ADC4
-        self._write_register(0x09, 0x00)# F5 right disabled
-        self._write_register(0x0A, 0x00)# F7 right disabled
-        self._write_register(0x0B, 0x00)# Reserved or disabled
-        self._write_register(0x0C, 0x20)# F2 right connected to ADC1
-        self._write_register(0x0D, 0x04)# F4 right connected to ADC3
-        self._write_register(0x0E, 0x00)# F6/F7 right disabled
-        self._write_register(0x0F, 0x30)# F3 right connected to AD2
-        self._write_register(0x10, 0x01)# F1 right connected to AD0
-        self._write_register(0x11, 0x50)# CLEAR right connected to AD4
-        self._write_register(0x12, 0x00)# Reserved or disabled
-        self._write_register(0x13, 0x06)# NIR connected to ADC5
-    
-    """
-     * @brief Returns the ADC data for a given channel
- *
- * @param channel The ADC channel to read
- * @return uint16_t The measured data for the currently configured sensor
- */
-    """
 
-# uint16_t Adafruit_AS7341::readChannel(as7341_channel_t channel) {
-#   // each channel has two bytes, so offset by two for each next channel
-#   Adafruit_BusIO_Register channel_data_reg = Adafruit_BusIO_Register(
-#       i2c_dev, (AS7341_CH0_DATA_L + 2 * channel), 2, LSBFIRST);
+    def setup_f1_f4(self):
+        """Configure the sensor to read from elements F1-F4, Clear, and NIR"""
+        # disable SP_EN bit while  making config changes
+        self._color_meas_enabled = False
+        # as7341.readRawValuesMode1()
 
-#   return channel_data_reg.read();
+        # ENUM-ify
+        self._smux_command = 2
+        # Write new configuration to all the 20 registers
+
+        self._f1f4_clear_nir()
+        # Start SMUX command
+        self._smux_enabled = True
+
+        # Enable SP_EN bit
+        self._color_meas_enabled = True
+
+    def _f1f4_clear_nir(self):
+        """Configure SMUX for sensors F1-F4, Clear and NIR"""
+        self._write_register(0x00, 0x30)  # F3 left set to ADC2
+        self._write_register(0x01, 0x01)  # F1 left set to ADC0
+        self._write_register(0x02, 0x00)  # Reserved or disabled
+        self._write_register(0x03, 0x00)  # F8 left disabled
+        self._write_register(0x04, 0x00)  # F6 left disabled
+        self._write_register(
+            0x05, 0x42
+        )  # F4 left connected to ADC3/f2 left connected to ADC1
+        self._write_register(0x06, 0x00)  # F5 left disbled
+        self._write_register(0x07, 0x00)  # F7 left disbled
+        self._write_register(0x08, 0x50)  # CLEAR connected to ADC4
+        self._write_register(0x09, 0x00)  # F5 right disabled
+        self._write_register(0x0A, 0x00)  # F7 right disabled
+        self._write_register(0x0B, 0x00)  # Reserved or disabled
+        self._write_register(0x0C, 0x20)  # F2 right connected to ADC1
+        self._write_register(0x0D, 0x04)  # F4 right connected to ADC3
+        self._write_register(0x0E, 0x00)  # F6/F7 right disabled
+        self._write_register(0x0F, 0x30)  # F3 right connected to AD2
+        self._write_register(0x10, 0x01)  # F1 right connected to AD0
+        self._write_register(0x11, 0x50)  # CLEAR right connected to AD4
+        self._write_register(0x12, 0x00)  # Reserved or disabled
+        self._write_register(0x13, 0x06)  # NIR connected to ADC5
+
+    # F1 415 26
+    # F2 445 30
+    # F3 480 36
+    # F4 515 39
+    # F5 555 39
+    # F6 590 40
+    # F7 630 50
+    # F8 680 52
     @property
     def gain(self):
         """The ADC gain multiplier
@@ -275,11 +298,13 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         */
         """
         return self._gain
+
     @gain.setter
     def gain(self, gain_value):
         if not Gain.is_valid(gain_value):
             raise AttributeError("`gain` must be a valid `adafruit_as7341.Gain`")
         self._gain = gain_value
+
     @property
     def _smux_enabled(self):
         return self._smux_enable_bit
