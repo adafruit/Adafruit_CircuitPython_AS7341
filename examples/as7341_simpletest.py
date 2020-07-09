@@ -4,8 +4,20 @@
 import board
 import adafruit_as7341
 from adafruit_debug_i2c import DebugI2C
+from time import sleep
 
 i2c = board.I2C()
 i2c = DebugI2C(i2c)
 sensor = adafruit_as7341.AS7341(i2c)
 print("out of init!")
+print("Current current is")
+print(sensor.led_current)
+print("Setting current")
+sensor.led_current = 50
+print("enabling led")
+sensor.led = True
+sleep(0.5)
+print("disabling LED")
+sensor.led = False
+
+print("led status:", sensor.led)

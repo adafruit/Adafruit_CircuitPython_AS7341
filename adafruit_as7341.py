@@ -32,12 +32,13 @@ Implementation Notes
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AS7341.git"
+from time import sleep
 from micropython import const
 import adafruit_bus_device.i2c_device as i2c_device
 
 # from adafruit_register.i2c_struct import UnaryStruct, ROUnaryStruct, Struct
-# from adafruit_register.i2c_bit import RWBit, ROBit
-from adafruit_register.i2c_bits import ROBits
+from adafruit_register.i2c_bit import RWBit
+from adafruit_register.i2c_bits import ROBits, RWBits
 
 # pylint: disable=bad-whitespace
 _AS7341_DEVICE_ID = const(0b001001)  # Correct content of WHO_AM_I register
@@ -76,15 +77,11 @@ _AS7341_CFG0 = const(
     0xA9
 )  # Sets Low power mode, Register bank, and Trigger lengthening
 _AS7341_CFG1 = const(0xAA)  # Controls ADC Gain
-_AS7341_CFG9 = const(
-    0xB2
-)  # Enables flicker detection and smux command completion system
-_AS7341_CFG12 = const(
-    0xB5
-)  # Spectral threshold channel for interrupts, persistence and auto-gain
+_AS7341_CFG9 = const(0xB2)  # flicker detect and SMUX command system ints
+_AS7341_CFG12 = const(0xB5)  # ADC channel for interrupts, persistence and auto-gain
 _AS7341_PERS = const(
     0xBD
-)  # Number of measurement cycles outside thresholds to trigger an interrupt
+)  # number of measurements outside thresholds to trigger an interrupt
 _AS7341_GPIO2 = const(
     0xBE
 )  # GPIO Settings and status: polarity, direction, sets output, reads
@@ -98,38 +95,16 @@ _AS7341_FD_STATUS = const(
 _AS7341_INTENAB = const(0xF9)  # Enables individual interrupt types
 _AS7341_CONTROL = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
 
-# class CV:
-#     """struct helper"""
 
-#     @classmethod
-#     def add_values(cls, value_tuples):
-#         """Add CV values to the class"""
-#         cls.string = {}
-#         cls.lsb = {}
+def _low_bank(func):
+    # pylint:disable=protected-access
+    def _decorator(self, *args, **kwargs):
+        self._low_bank_active = True
+        retval = func(self, *args, **kwargs)
+        self._low_bank_active = False
+        return retval
 
-#         for value_tuple in value_tuples:
-#             name, value, string, lsb = value_tuple
-#             setattr(cls, name, value)
-#             cls.string[value] = string
-#             cls.lsb[value] = lsb
-
-#     @classmethod
-#     def is_valid(cls, value):
-#         """Validate that a given value is a member"""
-#         return value in cls.string
-
-
-# class AccelRange(CV):
-#     """Options for ``accelerometer_range``"""
-#     pass  # pylint: disable=unnecessary-pass
-# AccelRange.add_values(
-#   (
-#     ("FREQ_196_6HZ_3DB", 0, 196.6, None),
-#     ("FREQ_151_8HZ_3DB", 1, 151.8, None),
-#     ("FREQ_119_5HZ_3DB", 2, 119.5, None)
-#   )
-
-# )
+    return _decorator
 
 
 class AS7341:  # pylint:disable=too-many-instance-attributes
@@ -143,6 +118,16 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     _device_id = ROBits(6, _AS7341_WHOAMI, 2)
 
+    _smux_enable_bit = RWBit(_AS7341_ENABLE, 4)
+    _led_control_enabled = RWBit(_AS7341_ENABLE, 3)
+    _color_meas_enabled = RWBit(_AS7341_ENABLE, 1)
+    _power_enabled = RWBit(_AS7341_ENABLE, 0)
+
+    _low_bank_active = RWBit(_AS7341_CFG0, 4)
+
+    _led_current_bits = RWBits(7, _AS7341_LED, 0)
+    _led_enabled = RWBit(_AS7341_LED, 7)
+
     def __init__(self, i2c_bus, address=_AS7341_I2CADDR_DEFAULT):
 
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
@@ -155,11 +140,11 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def initialize(self):
         """Configure the sensors with the default settings. For use after calling `reset()`"""
 
-        # self._power_enable = True
+        self._power_enabled = True
+        self._led_control_enabled = True
 
     def reset(self):
         """Resets the internal registers and restores the default settings"""
-        pass
 
     def _write_register(self, addr, data):
 
@@ -168,6 +153,47 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
+
+    @property
+    def _smux_enabled(self):
+        return self._smux_enable_bit
+
+    @_smux_enabled.setter
+    def _smux_enabled(self, enable_smux):
+        self._low_bank_active = False
+        self._smux_enable_bit = enable_smux
+        while self._smux_enable_bit is True:
+            sleep(0.001)
+
+    @property
+    def led_current(self):
+        """The maximum allowed current through the attached LED in milliamps.
+        Odd numbered values will be rounded down to the next lowest even number due
+        to the internal configuration restrictions"""
+        self._low_bank_active = True
+        current_val = self._led_current_bits
+        self._low_bank_active = False
+        return current_val
+
+    @led_current.setter
+    def led_current(self, led_curent):
+        self._low_bank_active = True
+        new_current = int((led_curent - 4) / 2)
+        print("set current:", led_curent, "sending:", new_current)
+        self._led_current_bits = new_current
+        self._low_bank_active = False
+
+    @property
+    @_low_bank
+    def led(self):
+        """The  attached LED. Set to True to turn on, False to turn off"""
+        return self._led_enabled
+
+    @led.setter
+    @_low_bank
+    def led(self, led_on):
+        """The  attached LED. Set to True to turn on, False to turn off"""
+        self._led_enabled = led_on
 
 
 # #ifndef _ADAFRUIT_AS7341_H
