@@ -16,7 +16,7 @@ print("Setting current")
 sensor.led_current = 50
 print("enabling led")
 sensor.led = True
-sleep(0.5)
+sleep(0.1)
 print("disabling LED")
 sensor.led = False
 

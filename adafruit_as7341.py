@@ -172,6 +172,11 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _smux_command = RWBits(2, _AS7341_CFG6, 3)
 
     _channel_0_data = UnaryStruct(_AS7341_CH0_DATA_L, "<H")
+    _channel_1_data = UnaryStruct(_AS7341_CH1_DATA_L, "<H")
+    _channel_2_data = UnaryStruct(_AS7341_CH2_DATA_L, "<H")
+    _channel_3_data = UnaryStruct(_AS7341_CH3_DATA_L, "<H")
+    _channel_4_data = UnaryStruct(_AS7341_CH4_DATA_L, "<H")
+    _channel_5_data = UnaryStruct(_AS7341_CH5_DATA_L, "<H")
 
 
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
@@ -255,12 +260,12 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
  */
     """
 
-uint16_t Adafruit_AS7341::readChannel(as7341_channel_t channel) {
-  // each channel has two bytes, so offset by two for each next channel
-  Adafruit_BusIO_Register channel_data_reg = Adafruit_BusIO_Register(
-      i2c_dev, (AS7341_CH0_DATA_L + 2 * channel), 2, LSBFIRST);
+# uint16_t Adafruit_AS7341::readChannel(as7341_channel_t channel) {
+#   // each channel has two bytes, so offset by two for each next channel
+#   Adafruit_BusIO_Register channel_data_reg = Adafruit_BusIO_Register(
+#       i2c_dev, (AS7341_CH0_DATA_L + 2 * channel), 2, LSBFIRST);
 
-  return channel_data_reg.read();
+#   return channel_data_reg.read();
     @property
     def gain(self):
         """The ADC gain multiplier
