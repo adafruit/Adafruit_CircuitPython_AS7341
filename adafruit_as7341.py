@@ -36,7 +36,7 @@ from time import sleep
 from micropython import const
 import adafruit_bus_device.i2c_device as i2c_device
 
-# from adafruit_register.i2c_struct import UnaryStruct, ROUnaryStruct, Struct
+from adafruit_register.i2c_struct import UnaryStruct  # , ROUnaryStruct, Struct
 from adafruit_register.i2c_bit import RWBit
 from adafruit_register.i2c_bits import ROBits, RWBits
 
@@ -107,6 +107,50 @@ def _low_bank(func):
     return _decorator
 
 
+class CV:
+    """struct helper"""
+
+    @classmethod
+    def add_values(cls, value_tuples):
+        """Add CV values to the class"""
+        cls.string = {}
+        cls.lsb = {}
+
+        for value_tuple in value_tuples:
+            name, value, string, lsb = value_tuple
+            setattr(cls, name, value)
+            cls.string[value] = string
+            cls.lsb[value] = lsb
+
+    @classmethod
+    def is_valid(cls, value):
+        """Validate that a given value is a member"""
+        return value in cls.string
+
+
+class Gain(CV):
+    """Options for ``accelerometer_range``"""
+
+    pass  # pylint: disable=unnecessary-pass
+
+
+Gain.add_values(
+    (
+        ("GAIN_0_5X", 0, 0.5, None),
+        ("GAIN_1X", 1, 1, None),
+        ("GAIN_2X", 2, 2, None),
+        ("GAIN_4X", 3, 4, None),
+        ("GAIN_8X", 4, 8, None),
+        ("GAIN_16X", 5, 16, None),
+        ("GAIN_32X", 6, 32, None),
+        ("GAIN_64X", 7, 64, None),
+        ("GAIN_128X", 8, 128, None),
+        ("GAIN_256X", 9, 256, None),
+        ("GAIN_512X", 10, 512, None),
+    )
+)
+
+
 class AS7341:  # pylint:disable=too-many-instance-attributes
     """Library for the AS7341 Sensor
 
@@ -119,7 +163,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _device_id = ROBits(6, _AS7341_WHOAMI, 2)
 
     _smux_enable_bit = RWBit(_AS7341_ENABLE, 4)
-    _led_control_enabled = RWBit(_AS7341_ENABLE, 3)
+    _led_control_enabled = RWBit(_AS7341_CONFIG, 3)
     _color_meas_enabled = RWBit(_AS7341_ENABLE, 1)
     _power_enabled = RWBit(_AS7341_ENABLE, 0)
 
@@ -127,6 +171,24 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
+    _cfg0 = UnaryStruct(_AS7341_CFG0, "<B")
+    atime = UnaryStruct(_AS7341_ATIME, "<B")
+    """The integration time step count.
+    Total integration time will be `(ATIME + 1) * (ASTEP + 1) * 2.78µS` *
+    """
+    astep = UnaryStruct(_AS7341_ASTEP_L, "<H")
+    """ The integration time step size
+    *
+    * @param astep_value Integration time step size in 2.78 microsecon increments
+    * Step size is `(astep_value+1) * 2.78 uS`
+    """
+    gain = UnaryStruct(_AS7341_CFG1, "<B")
+    """The ADC gain multiplier
+    *
+    * @param gain_value The gain amount. must be an `as7341_gain_t`
+    * @return true: success false: failure
+    */
+    """
 
     def __init__(self, i2c_bus, address=_AS7341_I2CADDR_DEFAULT):
 
@@ -153,6 +215,12 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
+
+    # @property
+    # def atime(self):
+    #     """The integration time step count.
+    #     Total integration time will be `(ATIME + 1) * (ASTEP + 1) * 2.78µS` *
+    #     """
 
     @property
     def _smux_enabled(self):
