@@ -36,7 +36,7 @@ from time import sleep, monotonic
 from micropython import const
 import adafruit_bus_device.i2c_device as i2c_device
 
-from adafruit_register.i2c_struct import UnaryStruct  # , ROUnaryStruct, Struct
+from adafruit_register.i2c_struct import UnaryStruct, Struct  # , ROUnaryStruct
 from adafruit_register.i2c_bit import RWBit
 from adafruit_register.i2c_bits import ROBits, RWBits
 
@@ -178,6 +178,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _channel_4_data = UnaryStruct(_AS7341_CH4_DATA_L, "<H")
     _channel_5_data = UnaryStruct(_AS7341_CH5_DATA_L, "<H")
 
+    _all_channels = Struct(_AS7341_CH0_DATA_L, "<HHHHHH")
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
     _cfg0 = UnaryStruct(_AS7341_CFG0, "<B")
@@ -222,6 +223,11 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     def reset(self):
         """Resets the internal registers and restores the default settings"""
+
+    @property
+    def all_channels(self):
+        """The current readings for all six ADC channels"""
+        return self._all_channels
 
     def wait_for_data(self, timeout=1.0):
         """Wait for sensor data to be ready"""
