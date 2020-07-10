@@ -131,6 +131,15 @@ class CV:
         return value in cls.string
 
 
+# class Flicker(CV):
+#     """Options for ``flicker_detection_type``"""
+
+#     pass  # pylint: disable=unnecessary-pass
+
+
+# Flicker.add_values((("FLICKER_100HZ", 0, 100, None), ("FLICKER_1000HZ", 1, 1000, None)))
+
+
 class Gain(CV):
     """Options for ``accelerometer_range``"""
 
@@ -196,16 +205,16 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     """
 
-    _COLOR_CHANNELS = {
-        "F1": ("415nm", "26"),
-        "F2": ("445nm", "30"),
-        "F3": ("480nm", "36"),
-        "F4": ("515nm", "39"),
-        "F5": ("555nm", "39"),
-        "F6": ("590nm", "40"),
-        "F7": ("630nm", "50"),
-        "F8": ("680nm", "52"),
-    }
+    # _COLOR_CHANNELS = {
+    #     "F1": ("415nm", "26"),
+    #     "F2": ("445nm", "30"),
+    #     "F3": ("480nm", "36"),
+    #     "F4": ("515nm", "39"),
+    #     "F5": ("555nm", "39"),
+    #     "F6": ("590nm", "40"),
+    #     "F7": ("630nm", "50"),
+    #     "F8": ("680nm", "52"),
+    # }
     _device_id = ROBits(6, _AS7341_WHOAMI, 2)
 
     _smux_enable_bit = RWBit(_AS7341_ENABLE, 4)
@@ -256,8 +265,9 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self.reset()
         self.initialize()
         self._buffer = bytearray(2)
-        self._low_channels_setup = False
-        self._high_channels_setup = False
+        self._low_channels_configured = False
+        self._high_channels_configured = False
+        self._flicker_detection_1k_configured = False
 
     def initialize(self):
         """Configure the sensors with the default settings. For use after calling `reset()`"""
@@ -275,11 +285,11 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def all_channels(self):
         """The current readings for all six ADC channels"""
 
-        self._setup_f1_f4()
+        self._configure_f1_f4()
         self._wait_for_data()
         low_channel_reads = self._all_channels
 
-        self._setup_f5_f8()
+        self._configure_f5_f8()
         self._wait_for_data()
         high_channel_reads = self._all_channels
 
@@ -288,56 +298,56 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     @property
     def channel_415nm(self):
         """The current reading for the 415nm band"""
-        self._setup_f1_f4()
+        self._configure_f1_f4()
         self._wait_for_data()
         return self._channel_0_data
 
     @property
     def channel_445nm(self):
         """The current reading for the 445nm band"""
-        self._setup_f1_f4()
+        self._configure_f1_f4()
         self._wait_for_data()
         return self._channel_1_data
 
     @property
     def channel_480nm(self):
         """The current reading for the 480nm band"""
-        self._setup_f1_f4()
+        self._configure_f1_f4()
         self._wait_for_data()
         return self._channel_2_data
 
     @property
     def channel_515nm(self):
         """The current reading for the 515nm band"""
-        self._setup_f1_f4()
+        self._configure_f1_f4()
         self._wait_for_data()
         return self._channel_3_data
 
     @property
     def channel_555nm(self):
         """The current reading for the 555nm band"""
-        self._setup_f5_f8()
+        self._configure_f5_f8()
         self._wait_for_data()
         return self._channel_0_data
 
     @property
     def channel_590nm(self):
         """The current reading for the 590nm band"""
-        self._setup_f5_f8()
+        self._configure_f5_f8()
         self._wait_for_data()
         return self._channel_1_data
 
     @property
     def channel_630nm(self):
         """The current reading for the 630nm band"""
-        self._setup_f5_f8()
+        self._configure_f5_f8()
         self._wait_for_data()
         return self._channel_2_data
 
     @property
     def channel_680nm(self):
         """The current reading for the 680nm band"""
-        self._setup_f5_f8()
+        self._configure_f5_f8()
         self._wait_for_data()
         return self._channel_3_data
 
@@ -357,12 +367,13 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
 
-    def _setup_f1_f4(self):
+    def _configure_f1_f4(self):
         """Configure the sensor to read from elements F1-F4, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
-        if self._low_channels_setup:
+        if self._low_channels_configured:
             return
-        self._high_channels_setup = False
+        self._high_channels_configured = False
+        self._flicker_detection_1k_configured = False
 
         self._color_meas_enabled = False
 
@@ -376,15 +387,17 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # Enable SP_EN bit
         self._color_meas_enabled = True
-        self._low_channels_setup = True
+        self._low_channels_configured = True
 
-    def _setup_f5_f8(self):
+    def _configure_f5_f8(self):
         """Configure the sensor to read from elements F5-F8, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
-        if self._high_channels_setup:
+        if self._high_channels_configured:
             return
 
-        self._low_channels_setup = False
+        self._low_channels_configured = False
+        self._flicker_detection_1k_configured = False
+
         self._color_meas_enabled = False
 
         # ENUM-ify
@@ -397,14 +410,41 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # Enable SP_EN bit
         self._color_meas_enabled = True
-        self._high_channels_setup = False
+        self._high_channels_configured = False
 
-    def flicker_detection_status(self):
-        """The flicker detection status"""
-        return self._fd_status
+    @property
+    def flicker_detected(self):
+        """The flicker frequency detected in Hertz"""
+        if not self._flicker_detection_1k_configured:
+            AttributeError(
+                "Flicker detection must be enabled to access `flicker_frequency`"
+            )
+        flicker_status = self._fd_status
 
-    def setup_1k_flicker_detection(self):
-        """Configure the sensor to detect 1000 Hz flickers"""
+        if flicker_status == 45:
+            return 1000
+        if flicker_status == 46:
+            return 1200
+        return None
+        # if we haven't returned yet either there was an error or an unknown frequency was detected
+
+    @property
+    def flicker_detection_enabled(self):
+        """The flicker detection status of the sensor. True if the sensor is configured\
+            to detect flickers
+        """
+        return self._flicker_detection_1k_configured
+
+    @flicker_detection_enabled.setter
+    def flicker_detection_enabled(self, flicker_enable):
+        if flicker_enable:
+            self._configure_1k_flicker_detection()
+        else:
+            self._configure_f1_f4()  # sane default
+
+    def _configure_1k_flicker_detection(self):
+        self._low_channels_configured = False
+        self._high_channels_configured = False
 
         # RAM_BANK 0 select which RAM bank to access in register addresses 0x00-0x7f
         self._write_register(_AS7341_CFG0, 0x00)
@@ -472,6 +512,8 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # in ENABLE - 0x80  fden=1 and pon=1 are enabled
         self._write_register(_AS7341_ENABLE, 0x41)
+
+        self._flicker_detection_1k_configured = True
 
     def _f1f4_clear_nir(self):
         """Configure SMUX for sensors F1-F4, Clear and NIR"""
