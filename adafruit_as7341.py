@@ -97,6 +97,8 @@ _AS7341_FD_STATUS = const(
 _AS7341_INTENAB = const(0xF9)  # Enables individual interrupt types
 _AS7341_CONTROL = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
 _AS7341_FD_CFG0 = const(0xD7)  # Enables FIFO for flicker detection
+_AS7341_FD_TIME1 = const(0xD8)  #
+_AS7341_FD_TIME2 = const(0xDA)  #
 
 
 def _low_bank(func):
@@ -442,6 +444,54 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         else:
             self._configure_f1_f4()  # sane default
 
+    def _f1f4_clear_nir(self):
+        """Configure SMUX for sensors F1-F4, Clear and NIR"""
+
+        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
+        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.ADC1, SMUX_OUT.ADC3)
+        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.ADC1)
+        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.ADC3, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
+        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+
+    def _f5f8_clear_nir(self):
+        # SMUX Config for F5,F6,F7,F8,NIR,Clear
+        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.ADC3)
+        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.ADC1, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.ADC0)
+        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.ADC2, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.ADC0)
+        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.ADC2, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.ADC2, SMUX_OUT.ADC1)
+        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+
+    # TODO: Convert as much of this as possible to properties or named attributes
     def _configure_1k_flicker_detection(self):
         self._low_channels_configured = False
         self._high_channels_configured = False
@@ -491,11 +541,14 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self._write_register(0x1A, 0x2F)
         self._write_register(0x1B, 0x1A)
 
-        self._write_register(_AS7341_CFG0, 0x01)
+        # self._write_register(_AS7341_CFG0, 0x01)
+        self._cfg0 = 0x01
 
         # select RAM coefficients for flicker detection by setting
         # fd_disable_constant_init to „1“ (FD_CFG0 register) in FD_CFG0 register -
-        # 0xd7  fd_disable_constant_init=1 fd_samples=4
+        # 0xD7
+        # fd_disable_constant_init=1
+        # fd_samples=4
         self._write_register(_AS7341_FD_CFG0, 0x60)
 
         # in FD_CFG1 register - 0xd8 fd_time(7:0) = 0x40
@@ -515,52 +568,48 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         self._flicker_detection_1k_configured = True
 
-    def _f1f4_clear_nir(self):
-        """Configure SMUX for sensors F1-F4, Clear and NIR"""
+    def _configure_flicker_detection(self):
+        pass
+        # // disable everything Flicker detect, smux, wait, spectral, power
+        # writeRegister(byte(AS7341_ENABLE), byte(0x00))
 
-        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
-        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.ADC1, SMUX_OUT.ADC3)
-        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
-        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.ADC1)
-        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.ADC3, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
-        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
-        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+        # // Write SMUX configuration from RAM to set SMUX chain registers (Write 0x10
+        # // to CFG6)
+        # SmuxConfigRAM()
 
-    def _f5f8_clear_nir(self):
-        # SMUX Config for F5,F6,F7,F8,NIR,Clear
-        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.ADC3)
-        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.ADC1, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.ADC0)
-        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.ADC2, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
-        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.ADC0)
-        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.ADC2, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.ADC2, SMUX_OUT.ADC1)
-        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
-        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+        # // Write new configuration to all the 20 registers for detecting Flicker
+        # FDConfig()
+
+        # // Start SMUX command
+        # enableSMUX()
+
+        # // Enable SP_EN bit
+        # enableSpectralMeasurement(true)
+
+        # writeRegister(byte(AS7341_ENABLE), byte(0x41))
+        # delay(500)
+
+        # int flicker_value = getFlickerDetectStatus()
+        # Serial.print("Flicker value-")
+        # Serial.println(flicker_value)
+
+        # if (flicker_value == 44) {
+        #     Serial.println("Unknown frequency")
+        #     // 0b 10 11 01
+        # } else if (flicker_value == 45) {
+        #     Serial.println("100 Hz detected")
+        #     // 0b 10 11 10
+        # } else if (flicker_value == 46) {
+        #     Serial.println("120 Hz detected")
+        # } else {
+        #     Serial.println("Error in reading")
+        # }
+
+        # // Setting back the PON bit in the ENABLE Register
+
+        # writeRegister(byte(AS7341_ENABLE), byte(0x01))
+
+        # Serial.println("")
 
     def _smux_template(self):
         # SMUX_OUT.DISABLED
