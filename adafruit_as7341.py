@@ -275,72 +275,73 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def all_channels(self):
         """The current readings for all six ADC channels"""
 
-        # sensor._setup_f1_f4()
-        # sensor.wait_for_data()
-        # bulk_reads = sensor.all_channels
+        self._setup_f1_f4()
+        self._wait_for_data()
+        low_channel_reads = self._all_channels
 
-        # sensor.setup_f5_f8()
-        # sensor.wait_for_data()
-        # bulk_reads2 = sensor.all_channels
-        return self._all_channels
+        self._setup_f5_f8()
+        self._wait_for_data()
+        high_channel_reads = self._all_channels
+
+        return low_channel_reads + high_channel_reads
 
     @property
     def channel_415nm(self):
         """The current reading for the 415nm band"""
         self._setup_f1_f4()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_0_data
 
     @property
     def channel_445nm(self):
         """The current reading for the 445nm band"""
         self._setup_f1_f4()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_1_data
 
     @property
     def channel_480nm(self):
         """The current reading for the 480nm band"""
         self._setup_f1_f4()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_2_data
 
     @property
     def channel_515nm(self):
         """The current reading for the 515nm band"""
         self._setup_f1_f4()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_3_data
 
     @property
     def channel_555nm(self):
         """The current reading for the 555nm band"""
         self._setup_f5_f8()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_0_data
 
     @property
     def channel_590nm(self):
         """The current reading for the 590nm band"""
         self._setup_f5_f8()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_1_data
 
     @property
     def channel_630nm(self):
         """The current reading for the 630nm band"""
         self._setup_f5_f8()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_2_data
 
     @property
     def channel_680nm(self):
         """The current reading for the 680nm band"""
         self._setup_f5_f8()
-        self.wait_for_data()
+        self._wait_for_data()
         return self._channel_3_data
 
-    def wait_for_data(self, timeout=1.0):
+    def _wait_for_data(self, timeout=1.0):
         """Wait for sensor data to be ready"""
         start = monotonic()
         while not self._data_ready_bit:
