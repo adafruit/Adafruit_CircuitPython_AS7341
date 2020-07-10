@@ -95,6 +95,7 @@ _AS7341_FD_STATUS = const(
 )  # Flicker detection status; measurement valid, saturation, flicker
 _AS7341_INTENAB = const(0xF9)  # Enables individual interrupt types
 _AS7341_CONTROL = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
+_AS7341_FD_CFG0 = const(0xD7)  # Enables FIFO for flicker detection
 
 
 def _low_bank(func):
@@ -170,6 +171,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     _low_bank_active = RWBit(_AS7341_CFG0, 4)
     _smux_command = RWBits(2, _AS7341_CFG6, 3)
+    _fd_status = UnaryStruct(_AS7341_FD_STATUS, "<B")
 
     _channel_0_data = UnaryStruct(_AS7341_CH0_DATA_L, "<H")
     _channel_1_data = UnaryStruct(_AS7341_CH1_DATA_L, "<H")
@@ -257,6 +259,80 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # Enable SP_EN bit
         self._color_meas_enabled = True
+
+    def flicker_detection_status(self):
+        """The flicker detection status"""
+        return self._fd_status
+
+    def setup_1k_flicker_detection(self):
+        """Configure the sensor to detect 1000 Hz flickers"""
+
+        # RAM_BANK 0 select which RAM bank to access in register addresses 0x00-0x7f
+        self._write_register(_AS7341_CFG0, 0x00)
+
+        # The coefficient calculated are stored into the RAM bank 0 and RAM bank 1,
+        # they are used instead of 100Hz and 120Hz coefficients which are the default
+        # flicker detection coefficients
+        # write new coefficients to detect the 1000Hz and 1200Hz - part 1
+        self._write_register(0x04, 0x9E)
+        self._write_register(0x05, 0x36)
+        self._write_register(0x0E, 0x2E)
+        self._write_register(0x0F, 0x1B)
+        self._write_register(0x18, 0x7D)
+        self._write_register(0x19, 0x36)
+        self._write_register(0x22, 0x09)
+        self._write_register(0x23, 0x1B)
+        self._write_register(0x2C, 0x5B)
+        self._write_register(0x2D, 0x36)
+        self._write_register(0x36, 0xE5)
+        self._write_register(0x37, 0x1A)
+        self._write_register(0x40, 0x3A)
+        self._write_register(0x41, 0x36)
+        self._write_register(0x4A, 0xC1)
+        self._write_register(0x4B, 0x1A)
+        self._write_register(0x54, 0x18)
+        self._write_register(0x55, 0x36)
+        self._write_register(0x5E, 0x9C)
+        self._write_register(0x5F, 0x1A)
+        self._write_register(0x68, 0xF6)
+        self._write_register(0x69, 0x35)
+        self._write_register(0x72, 0x78)
+        self._write_register(0x73, 0x1A)
+        self._write_register(0x7C, 0x4D)
+        self._write_register(0x7D, 0x35)
+
+        # RAM_BANK 1 select which RAM bank to access in register addresses 0x00-0x7f
+        self._write_register(_AS7341_CFG0, 0x01)
+
+        # write new coefficients to detect the 1000Hz and 1200Hz - part 1
+        self._write_register(0x06, 0x54)
+        self._write_register(0x07, 0x1A)
+        self._write_register(0x10, 0xB3)
+        self._write_register(0x11, 0x35)
+        self._write_register(0x1A, 0x2F)
+        self._write_register(0x1B, 0x1A)
+
+        self._write_register(_AS7341_CFG0, 0x01)
+
+        # select RAM coefficients for flicker detection by setting
+        # fd_disable_constant_init to „1“ (FD_CFG0 register) in FD_CFG0 register -
+        # 0xd7  fd_disable_constant_init=1 fd_samples=4
+        self._write_register(_AS7341_FD_CFG0, 0x60)
+
+        # in FD_CFG1 register - 0xd8 fd_time(7:0) = 0x40
+        self._write_register(_AS7341_FD_TIME1, 0x40)
+
+        # in FD_CFG2 register - 0xd9  fd_dcr_filter_size=1 fd_nr_data_sets(2:0)=5
+        self._write_register(0xD9, 0x25)
+
+        # in FD_CFG3 register - 0xda fd_gain=9
+        self._write_register(_AS7341_FD_TIME2, 0x48)
+
+        # in CFG9 register - 0xb2 sien_fd=1
+        self._write_register(_AS7341_CFG9, 0x40)
+
+        # in ENABLE - 0x80  fden=1 and pon=1 are enabled
+        self._write_register(_AS7341_ENABLE, 0x41)
 
     def _f1f4_clear_nir(self):
         """Configure SMUX for sensors F1-F4, Clear and NIR"""
