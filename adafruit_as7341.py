@@ -97,8 +97,6 @@ _AS7341_FD_STATUS = const(
 _AS7341_INTENAB = const(0xF9)  # Enables individual interrupt types
 _AS7341_CONTROL = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
 _AS7341_FD_CFG0 = const(0xD7)  # Enables FIFO for flicker detection
-_AS7341_FD_TIME1 = const(0xD8)  #
-_AS7341_FD_TIME2 = const(0xDA)  #
 
 
 def _low_bank(func):
@@ -235,6 +233,10 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _channel_4_data = UnaryStruct(_AS7341_CH4_DATA_L, "<H")
     _channel_5_data = UnaryStruct(_AS7341_CH5_DATA_L, "<H")
 
+    _int_to_adc = RWBit(_AS7341_GPIO, 0)
+    _gpio_to_adc = RWBit(_AS7341_GPIO, 1)
+    _gpio_as_input = RWBit(_AS7341_GPIO2, 2)
+
     _all_channels = Struct(_AS7341_CH0_DATA_L, "<HHHHHH")
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
@@ -278,7 +280,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self._led_control_enabled = True
         self.atime = 100
         self.astep = 999
-        self.gain = Gain.GAIN_256X  # pylint:disable=no-member
+        self.gain = Gain.GAIN_128X  # pylint:disable=no-member
 
     def reset(self):
         """Resets the internal registers and restores the default settings"""
@@ -610,6 +612,64 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         # writeRegister(byte(AS7341_ENABLE), byte(0x01))
 
         # Serial.println("")
+
+    def configure_ext_pins(self):
+        """Configure the sensor to read from elements F1, INT, and GPIO"""
+        # disable SP_EN bit while  making config changes
+
+        self._high_channels_configured = False
+        self._high_channels_configured = False
+        self._flicker_detection_1k_configured = False
+
+        self._color_meas_enabled = False
+
+        # ENUM-ify
+        self._smux_command = 2
+        # Write new configuration to all the 20 registers
+
+        self._ext_pin_adc_test()
+        # Start SMUX command
+        self._smux_enabled = True
+
+        # Enable SP_EN bit
+        self._color_meas_enabled = True
+
+    def _ext_pin_adc_test(self):
+        # F1=> ADC0
+        # GPIO=>ADC4
+        # INT=> ADC5
+        self._low_bank_active = True
+        self._int_to_adc = True
+        self._gpio_to_adc = True
+        self._low_bank_active = False
+        self._gpio_as_input = True
+
+        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        # connect F1 Left to ADC0
+        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+
+        # connect GPIO to ADC4 and F1 Right to ADC0
+        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.ADC0, SMUX_OUT.ADC4)
+
+        # connect INT to ADC5
+        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+
+        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
 
     def _smux_template(self):
         # SMUX_OUT.DISABLED
