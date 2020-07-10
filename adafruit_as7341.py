@@ -184,7 +184,7 @@ SMUX_IN = SmuxIn(*list(range(20)))
 SmuxOut = namedtuple("SmuxOut", "DISABLED ADC0 ADC1 ADC2 ADC3 ADC4 ADC5")
 SMUX_OUT = SmuxOut(*list(range(7)))
 
-SensorChannel = namedtuple("SensorChannel", ['value', 'name', 'wavelength', 'width'])
+SensorChannel = namedtuple("SensorChannel", ["value", "name", "wavelength", "width"])
 
 
 class AS7341:  # pylint:disable=too-many-instance-attributes
@@ -268,7 +268,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self.astep = 999
         self.gain = Gain.GAIN_256X  # pylint:disable=no-member
 
-
     def reset(self):
         """Resets the internal registers and restores the default settings"""
 
@@ -291,18 +290,21 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self._setup_f1_f4()
         self.wait_for_data()
         return self._channel_0_data
+
     @property
     def channel_445nm(self):
         """The current reading for the 445nm band"""
         self._setup_f1_f4()
         self.wait_for_data()
         return self._channel_1_data
+
     @property
     def channel_480nm(self):
         """The current reading for the 480nm band"""
         self._setup_f1_f4()
         self.wait_for_data()
         return self._channel_2_data
+
     @property
     def channel_515nm(self):
         """The current reading for the 515nm band"""
@@ -310,6 +312,33 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self.wait_for_data()
         return self._channel_3_data
 
+    @property
+    def channel_555nm(self):
+        """The current reading for the 555nm band"""
+        self._setup_f5_f8()
+        self.wait_for_data()
+        return self._channel_0_data
+
+    @property
+    def channel_590nm(self):
+        """The current reading for the 590nm band"""
+        self._setup_f5_f8()
+        self.wait_for_data()
+        return self._channel_1_data
+
+    @property
+    def channel_630nm(self):
+        """The current reading for the 630nm band"""
+        self._setup_f5_f8()
+        self.wait_for_data()
+        return self._channel_2_data
+
+    @property
+    def channel_680nm(self):
+        """The current reading for the 680nm band"""
+        self._setup_f5_f8()
+        self.wait_for_data()
+        return self._channel_3_data
 
     def wait_for_data(self, timeout=1.0):
         """Wait for sensor data to be ready"""
