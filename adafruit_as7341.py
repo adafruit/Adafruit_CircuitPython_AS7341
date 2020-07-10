@@ -32,6 +32,7 @@ Implementation Notes
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AS7341.git"
+from collections import namedtuple
 from time import sleep, monotonic
 from micropython import const
 import adafruit_bus_device.i2c_device as i2c_device
@@ -153,6 +154,38 @@ Gain.add_values(
 )
 
 
+SmuxIn = namedtuple(
+    "SmuxIn",
+    [
+        "NC_F3L",
+        "F1L_NC",
+        "NC_NC0",
+        "NC_F8L",
+        "F6L_NC",
+        "F2L_F4L",
+        "NC_F5L",
+        "F7L_NC",
+        "NC_CL",
+        "NC_F5R",
+        "F7R_NC",
+        "NC_NC1",
+        "NC_F2R",
+        "F4R_NC",
+        "F8R_F6R",
+        "NC_F3R",
+        "F1R_EXT_GPIO",
+        "EXT_INT_CR",
+        "NC_DARK",
+        "NIR_F",
+    ],
+)
+SMUX_IN = SmuxIn(*list(range(20)))
+
+
+SmuxOut = namedtuple("SmuxOut", "DISABLED ADC0 ADC1 ADC2 ADC3 ADC4 ADC5")
+SMUX_OUT = SmuxOut(*list(range(7)))
+
+
 class AS7341:  # pylint:disable=too-many-instance-attributes
     """Library for the AS7341 Sensor
 
@@ -162,6 +195,16 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     """
 
+    _COLOR_CHANNELS = {
+        "F1": ("415nm", "26"),
+        "F2": ("445nm", "30"),
+        "F3": ("480nm", "36"),
+        "F4": ("515nm", "39"),
+        "F5": ("555nm", "39"),
+        "F6": ("590nm", "40"),
+        "F7": ("630nm", "50"),
+        "F8": ("680nm", "52"),
+    }
     _device_id = ROBits(6, _AS7341_WHOAMI, 2)
 
     _smux_enable_bit = RWBit(_AS7341_ENABLE, 4)
@@ -260,6 +303,23 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         # Enable SP_EN bit
         self._color_meas_enabled = True
 
+    def setup_f5_f8(self):
+        """Configure the sensor to read from elements F5-F8, Clear, and NIR"""
+        # disable SP_EN bit while  making config changes
+        self._color_meas_enabled = False
+        # as7341.readRawValuesMode1()
+
+        # ENUM-ify
+        self._smux_command = 2
+        # Write new configuration to all the 20 registers
+
+        self._f5f8_clear_nir()
+        # Start SMUX command
+        self._smux_enabled = True
+
+        # Enable SP_EN bit
+        self._color_meas_enabled = True
+
     def flicker_detection_status(self):
         """The flicker detection status"""
         return self._fd_status
@@ -336,28 +396,85 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     def _f1f4_clear_nir(self):
         """Configure SMUX for sensors F1-F4, Clear and NIR"""
-        self._write_register(0x00, 0x30)  # F3 left set to ADC2
-        self._write_register(0x01, 0x01)  # F1 left set to ADC0
-        self._write_register(0x02, 0x00)  # Reserved or disabled
-        self._write_register(0x03, 0x00)  # F8 left disabled
-        self._write_register(0x04, 0x00)  # F6 left disabled
-        self._write_register(
-            0x05, 0x42
-        )  # F4 left connected to ADC3/f2 left connected to ADC1
-        self._write_register(0x06, 0x00)  # F5 left disbled
-        self._write_register(0x07, 0x00)  # F7 left disbled
-        self._write_register(0x08, 0x50)  # CLEAR connected to ADC4
-        self._write_register(0x09, 0x00)  # F5 right disabled
-        self._write_register(0x0A, 0x00)  # F7 right disabled
-        self._write_register(0x0B, 0x00)  # Reserved or disabled
-        self._write_register(0x0C, 0x20)  # F2 right connected to ADC1
-        self._write_register(0x0D, 0x04)  # F4 right connected to ADC3
-        self._write_register(0x0E, 0x00)  # F6/F7 right disabled
-        self._write_register(0x0F, 0x30)  # F3 right connected to AD2
-        self._write_register(0x10, 0x01)  # F1 right connected to AD0
-        self._write_register(0x11, 0x50)  # CLEAR right connected to AD4
-        self._write_register(0x12, 0x00)  # Reserved or disabled
-        self._write_register(0x13, 0x06)  # NIR connected to ADC5
+        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
+        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.ADC1, SMUX_OUT.ADC3)
+        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.ADC1)
+        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.ADC3, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
+        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+
+    def _f5f8_clear_nir(self):
+        # SMUX Config for F5,F6,F7,F8,NIR,Clear
+        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.ADC3)
+        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.ADC1, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.ADC0)
+        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.ADC2, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.ADC0)
+        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.ADC2, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.ADC2, SMUX_OUT.ADC1)
+        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
+        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
+
+    def _smux_template(self):
+        # SMUX_OUT.DISABLED
+        # SMUX_OUT.ADC0
+        # SMUX_OUT.ADC1
+        # SMUX_OUT.ADC2
+        # SMUX_OUT.ADC3
+        # SMUX_OUT.ADC4
+        # SMUX_OUT.ADC5
+        self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F8L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F6L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F2L_F4L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F5L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_CL, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F5R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F7R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F4R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+        self.set_smux(SMUX_IN.NIR_F, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
+
+    def set_smux(self, smux_addr, smux_out1, smux_out2):
+        """Connect a pair of sensors to an ADC channel"""
+        low_nibble = smux_out1
+        high_nibble = smux_out2 << 4
+        smux_byte = high_nibble | low_nibble
+        self._write_register(smux_addr, smux_byte)
 
     # F1 415 26
     # F2 445 30
@@ -419,41 +536,3 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def led(self, led_on):
         """The  attached LED. Set to True to turn on, False to turn off"""
         self._led_enabled = led_on
-
-
-# /**
-#  * @brief ADC Channel specifiers for configuration
-#  *
-#  */
-# typedef enum {
-#   AS7341_CHANNEL_0,
-#   AS7341_CHANNEL_1,
-#   AS7341_CHANNEL_2,
-#   AS7341_CHANNEL_3,
-#   AS7341_CHANNEL_4,
-#   AS7341_CHANNEL_5,
-# } as7341_channel_t;
-
-# /**
-#  * @brief The number of measurement cycles with spectral data outside of a
-#  * threshold required to trigger an interrupt
-#  *
-#  */
-# typedef enum {
-#   AS7341_INT_COUNT_ALL, 0
-#   AS7341_INT_COUNT_1, 1
-#   AS7341_INT_COUNT_2, 2
-#   AS7341_INT_COUNT_3, 3
-#   AS7341_INT_COUNT_5, 4
-#   AS7341_INT_COUNT_10, 5
-#   AS7341_INT_COUNT_15, 6
-#   AS7341_INT_COUNT_20, 7
-#   AS7341_INT_COUNT_25, 8
-#   AS7341_INT_COUNT_30, 9
-#   AS7341_INT_COUNT_35, 10
-#   AS7341_INT_COUNT_40, 11
-#   AS7341_INT_COUNT_45, 12
-#   AS7341_INT_COUNT_50, 13
-#   AS7341_INT_COUNT_55, 14
-#   AS7341_INT_COUNT_60, 15
-# } as7341_int_cycle_count_t;
