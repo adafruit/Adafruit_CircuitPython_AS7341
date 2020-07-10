@@ -181,9 +181,10 @@ SmuxIn = namedtuple(
 )
 SMUX_IN = SmuxIn(*list(range(20)))
 
-
 SmuxOut = namedtuple("SmuxOut", "DISABLED ADC0 ADC1 ADC2 ADC3 ADC4 ADC5")
 SMUX_OUT = SmuxOut(*list(range(7)))
+
+SensorChannel = namedtuple("SensorChannel", ['value', 'name', 'wavelength', 'width'])
 
 
 class AS7341:  # pylint:disable=too-many-instance-attributes
@@ -255,12 +256,18 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self.reset()
         self.initialize()
         self._buffer = bytearray(2)
+        self._low_channels_setup = False
+        self._high_channels_setup = False
 
     def initialize(self):
         """Configure the sensors with the default settings. For use after calling `reset()`"""
 
         self._power_enabled = True
         self._led_control_enabled = True
+        self.atime = 100
+        self.astep = 999
+        self.gain = Gain.GAIN_256X  # pylint:disable=no-member
+
 
     def reset(self):
         """Resets the internal registers and restores the default settings"""
@@ -268,7 +275,41 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     @property
     def all_channels(self):
         """The current readings for all six ADC channels"""
+
+        # sensor._setup_f1_f4()
+        # sensor.wait_for_data()
+        # bulk_reads = sensor.all_channels
+
+        # sensor.setup_f5_f8()
+        # sensor.wait_for_data()
+        # bulk_reads2 = sensor.all_channels
         return self._all_channels
+
+    @property
+    def channel_415nm(self):
+        """The current reading for the 415nm band"""
+        self._setup_f1_f4()
+        self.wait_for_data()
+        return self._channel_0_data
+    @property
+    def channel_445nm(self):
+        """The current reading for the 445nm band"""
+        self._setup_f1_f4()
+        self.wait_for_data()
+        return self._channel_1_data
+    @property
+    def channel_480nm(self):
+        """The current reading for the 480nm band"""
+        self._setup_f1_f4()
+        self.wait_for_data()
+        return self._channel_2_data
+    @property
+    def channel_515nm(self):
+        """The current reading for the 515nm band"""
+        self._setup_f1_f4()
+        self.wait_for_data()
+        return self._channel_3_data
+
 
     def wait_for_data(self, timeout=1.0):
         """Wait for sensor data to be ready"""
@@ -286,11 +327,14 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
 
-    def setup_f1_f4(self):
+    def _setup_f1_f4(self):
         """Configure the sensor to read from elements F1-F4, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
+        if self._low_channels_setup:
+            return
+        self._high_channels_setup = False
+
         self._color_meas_enabled = False
-        # as7341.readRawValuesMode1()
 
         # ENUM-ify
         self._smux_command = 2
@@ -302,12 +346,16 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # Enable SP_EN bit
         self._color_meas_enabled = True
+        self._low_channels_setup = True
 
-    def setup_f5_f8(self):
+    def _setup_f5_f8(self):
         """Configure the sensor to read from elements F5-F8, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
+        if self._high_channels_setup:
+            return
+
+        self._low_channels_setup = False
         self._color_meas_enabled = False
-        # as7341.readRawValuesMode1()
 
         # ENUM-ify
         self._smux_command = 2
@@ -319,6 +367,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # Enable SP_EN bit
         self._color_meas_enabled = True
+        self._high_channels_setup = False
 
     def flicker_detection_status(self):
         """The flicker detection status"""
@@ -396,6 +445,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     def _f1f4_clear_nir(self):
         """Configure SMUX for sensors F1-F4, Clear and NIR"""
+
         self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
         self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
         self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
@@ -476,14 +526,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         smux_byte = high_nibble | low_nibble
         self._write_register(smux_addr, smux_byte)
 
-    # F1 415 26
-    # F2 445 30
-    # F3 480 36
-    # F4 515 39
-    # F5 555 39
-    # F6 590 40
-    # F7 630 50
-    # F8 680 52
     @property
     def gain(self):
         """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`
