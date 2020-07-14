@@ -2,19 +2,27 @@
 # SPDX-License-Identifier: MIT
 from time import sleep
 import board
-import adafruit_as7341
+import busio
+from adafruit_as7341 import AS7341
 
-i2c = board.I2C()
-sensor = adafruit_as7341.AS7341(i2c)
-print("out of init!")
-print("Current current is")
-print(sensor.led_current)
-print("Setting current")
-sensor.led_current = 50
-print("enabling led")
-sensor.led = True
-sleep(0.1)
-print("disabling LED")
-sensor.led = False
+i2c = busio.I2C(board.SCL, board.SDA)
+sensor = AS7341(i2c)
 
-print("led status:", sensor.led)
+
+def bar_graph(value):
+    sm = int(value / 1000)
+    return sm * "*"
+
+
+while True:
+
+    print("F1 - 415nm/Violet %s" % bar_graph(sensor.channel_415nm))
+    print("F2 - 445nm//Indigo %s" % bar_graph(sensor.channel_445nm))
+    print("F3 - 480nm//Blue %s" % bar_graph(sensor.channel_480nm))
+    print("F4 - 515nm//Cyan %s" % bar_graph(sensor.channel_515nm))
+    print("F5 - 555nm/Green  %s" % bar_graph(sensor.channel_555nm))
+    print("F6 - 590nm/Yellow %s" % bar_graph(sensor.channel_590nm))
+    print("F7 - 630nm/Orange %s" % bar_graph(sensor.channel_630nm))
+    print("F8 - 680nm/Red    %s" % bar_graph(sensor.channel_680nm))
+    print("\n------------------------------------------------")
+    sleep(1)
