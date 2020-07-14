@@ -290,11 +290,9 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         """The current readings for all six ADC channels"""
 
         self._configure_f1_f4()
-        self._wait_for_data()
         low_channel_reads = self._all_channels
 
         self._configure_f5_f8()
-        self._wait_for_data()
         high_channel_reads = self._all_channels
 
         return low_channel_reads + high_channel_reads
@@ -303,56 +301,48 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def channel_415nm(self):
         """The current reading for the 415nm band"""
         self._configure_f1_f4()
-        self._wait_for_data()
         return self._channel_0_data
 
     @property
     def channel_445nm(self):
         """The current reading for the 445nm band"""
         self._configure_f1_f4()
-        self._wait_for_data()
         return self._channel_1_data
 
     @property
     def channel_480nm(self):
         """The current reading for the 480nm band"""
         self._configure_f1_f4()
-        self._wait_for_data()
         return self._channel_2_data
 
     @property
     def channel_515nm(self):
         """The current reading for the 515nm band"""
         self._configure_f1_f4()
-        self._wait_for_data()
         return self._channel_3_data
 
     @property
     def channel_555nm(self):
         """The current reading for the 555nm band"""
         self._configure_f5_f8()
-        self._wait_for_data()
         return self._channel_0_data
 
     @property
     def channel_590nm(self):
         """The current reading for the 590nm band"""
         self._configure_f5_f8()
-        self._wait_for_data()
         return self._channel_1_data
 
     @property
     def channel_630nm(self):
         """The current reading for the 630nm band"""
         self._configure_f5_f8()
-        self._wait_for_data()
         return self._channel_2_data
 
     @property
     def channel_680nm(self):
         """The current reading for the 680nm band"""
         self._configure_f5_f8()
-        self._wait_for_data()
         return self._channel_3_data
 
     def _wait_for_data(self, timeout=1.0):
@@ -392,6 +382,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         # Enable SP_EN bit
         self._color_meas_enabled = True
         self._low_channels_configured = True
+        self._wait_for_data()
 
     def _configure_f5_f8(self):
         """Configure the sensor to read from elements F5-F8, Clear, and NIR"""
@@ -414,7 +405,8 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
         # Enable SP_EN bit
         self._color_meas_enabled = True
-        self._high_channels_configured = False
+        self._high_channels_configured = True
+        self._wait_for_data()
 
     @property
     def flicker_detected(self):
@@ -448,7 +440,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     def _f1f4_clear_nir(self):
         """Configure SMUX for sensors F1-F4, Clear and NIR"""
-
         self.set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
         self.set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
         self.set_smux(SMUX_IN.NC_NC0, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
