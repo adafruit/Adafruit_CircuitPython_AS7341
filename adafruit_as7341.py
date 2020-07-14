@@ -218,7 +218,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _device_id = ROBits(6, _AS7341_WHOAMI, 2)
 
     _smux_enable_bit = RWBit(_AS7341_ENABLE, 4)
-    _led_control_enabled = RWBit(_AS7341_CONFIG, 3)
+    _led_control_enable_bit = RWBit(_AS7341_CONFIG, 3)
     _color_meas_enabled = RWBit(_AS7341_ENABLE, 1)
     _power_enabled = RWBit(_AS7341_ENABLE, 0)
 
@@ -731,22 +731,19 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
             sleep(0.001)
 
     @property
+    @_low_bank
     def led_current(self):
         """The maximum allowed current through the attached LED in milliamps.
         Odd numbered values will be rounded down to the next lowest even number due
         to the internal configuration restrictions"""
-        self._low_bank_active = True
         current_val = self._led_current_bits
-        self._low_bank_active = False
-        return current_val
+        return (current_val * 2) + 4
 
     @led_current.setter
+    @_low_bank
     def led_current(self, led_curent):
-        self._low_bank_active = True
         new_current = int((led_curent - 4) / 2)
-        print("set current:", led_curent, "sending:", new_current)
         self._led_current_bits = new_current
-        self._low_bank_active = False
 
     @property
     @_low_bank
@@ -757,5 +754,14 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     @led.setter
     @_low_bank
     def led(self, led_on):
-        """The  attached LED. Set to True to turn on, False to turn off"""
         self._led_enabled = led_on
+
+    @property
+    @_low_bank
+    def _led_control_enabled(self):
+        return self._led_control_enable_bit
+
+    @_led_control_enabled.setter
+    @_low_bank
+    def _led_control_enabled(self, enabled):
+        self._led_control_enable_bit = enabled
