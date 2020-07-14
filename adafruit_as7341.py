@@ -60,6 +60,9 @@ _AS7341_SP_HIGH_TH_H = const(0x87)  # Spectral measurement High Threshold low by
 _AS7341_STATUS = const(
     0x93
 )  # Interrupt status registers. Indicates the occourance of an interrupt
+_AS7341_ASTATUS = const(
+    0x94
+)  # Spectral Saturation and Gain status. Reading from here latches the data
 _AS7341_CH0_DATA_L = const(0x95)  # ADC Channel 0 Data
 _AS7341_CH0_DATA_H = const(0x96)  # ADC Channel 0 Data
 _AS7341_CH1_DATA_L = const(0x97)  # ADC Channel 1 Data
@@ -237,7 +240,9 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     _gpio_to_adc = RWBit(_AS7341_GPIO, 1)
     _gpio_as_input = RWBit(_AS7341_GPIO2, 2)
 
-    _all_channels = Struct(_AS7341_CH0_DATA_L, "<HHHHHH")
+    # "Reading the ASTATUS register (0x60 or 0x94) latches
+    # all 12 spectral data bytes to that status read." Datasheet Sec. 10.2.7
+    _all_channels = Struct(_AS7341_ASTATUS, "<BHHHHHH")
     _led_current_bits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
     _cfg0 = UnaryStruct(_AS7341_CFG0, "<B")
@@ -290,12 +295,14 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         """The current readings for all six ADC channels"""
 
         self._configure_f1_f4()
-        low_channel_reads = self._all_channels
+        adc_reads_f1_f4 = self._all_channels
+        reads = adc_reads_f1_f4[1:-2]
 
         self._configure_f5_f8()
-        high_channel_reads = self._all_channels
+        adc_reads_f5_f8 = self._all_channels
+        reads += adc_reads_f5_f8[1:-2]
 
-        return low_channel_reads + high_channel_reads
+        return reads
 
     @property
     def channel_415nm(self):
