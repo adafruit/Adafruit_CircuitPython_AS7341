@@ -617,7 +617,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     @led_current.setter
     @_low_bank
     def led_current(self, led_curent):
-        new_current = max(0, min(127,int((led_curent - 4) / 1)))
+        new_current = max(0, min(127,int((led_curent - 4) / 2)))
         self._led_current_bits = new_current
 
     @property
