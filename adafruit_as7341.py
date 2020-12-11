@@ -41,7 +41,6 @@ from adafruit_register.i2c_struct import UnaryStruct, Struct  # , ROUnaryStruct
 from adafruit_register.i2c_bit import RWBit
 from adafruit_register.i2c_bits import ROBits, RWBits
 
-# pylint: disable=bad-whitespace
 _AS7341_DEVICE_ID = const(0b001001)  # Correct content of WHO_AM_I register
 _AS7341_I2CADDR_DEFAULT = const(0x39)  # AS7341 default i2c address
 _AS7341_CHIP_ID = const(0x09)  # AS7341 default device id from WHOAMI
