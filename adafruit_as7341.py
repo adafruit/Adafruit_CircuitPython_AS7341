@@ -200,8 +200,8 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     """Library for the AS7341 Sensor
 
 
-        :param ~busio.I2C i2c_bus: The I2C bus the AS7341 is connected to.
-        :param address: The I2C address of the sensor
+    :param ~busio.I2C i2c_bus: The I2C bus the AS7341 is connected to.
+    :param address: The I2C address of the sensor
 
     """
 
@@ -583,8 +583,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     @property
     def gain(self):
-        """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`
-        """
+        """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`"""
         return self._gain
 
     @gain.setter
@@ -616,7 +615,9 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     @led_current.setter
     @_low_bank
     def led_current(self, led_curent):
-        new_current = int((led_curent - 4) / 2)
+        """coerce led_curent to be between 4 & 258, then calculate value
+        to be put into register on chip"""
+        new_current = int((max(4, min(258, led_curent)) - 4) / 2)
         self._led_current_bits = new_current
 
     @property
