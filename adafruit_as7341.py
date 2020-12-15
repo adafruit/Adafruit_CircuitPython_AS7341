@@ -617,7 +617,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     def led_current(self, led_curent):
         """coerce led_curent to be between 4 & 258, then calculate value
         to be put into register on chip"""
-        new_current = int((max(4, min(258, led_curent)) - 4) / 2)
+        new_current = int((min(258, max(4, led_curent)) - 4) / 2)
         self._led_current_bits = new_current
 
     @property
