@@ -16,7 +16,7 @@ Implementation Notes
 
 **Hardware:**
 
-* `Adafruit AS7341 Breakout <https://www.adafruit.com/products/45XX>`_
+* `Adafruit AS7341 Breakout <https://www.adafruit.com/product/4698>`_
 
 **Software and Dependencies:**
 
