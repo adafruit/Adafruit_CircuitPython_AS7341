@@ -11,7 +11,7 @@ CircuitPython library for use with the Adafruit AS7341 breakout
 
 * Author(s): Bryan Siepert
 
-Implementation Notes
+Implementation NotesF
 --------------------
 
 **Hardware:**
@@ -615,8 +615,8 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     @led_current.setter
     @_low_bank
     def led_current(self, led_curent):
-        """coerce led_curent to be between 4 & 258, then calculate value
-        to be put into register on chip"""
+        """set the LED current supplied by the chip. Values are coerced to the range
+        4-258mA. Fractional values rounded to nearest valid number"""
         new_current = int((min(258, max(4, led_curent)) - 4) / 2)
         self._led_current_bits = new_current
 
