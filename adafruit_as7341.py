@@ -462,7 +462,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self._set_smux(SMUX_IN.NC_NC1, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.NC_F2R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.F4R_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
-        self._set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.ADC2, SMUX_OUT.ADC1)
+        self._set_smux(SMUX_IN.F8R_F6R, SMUX_OUT.ADC3, SMUX_OUT.ADC1)
         self._set_smux(SMUX_IN.NC_F3R, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.F1R_EXT_GPIO, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.EXT_INT_CR, SMUX_OUT.DISABLED, SMUX_OUT.ADC4)
