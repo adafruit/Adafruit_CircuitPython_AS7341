@@ -17,7 +17,9 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-CircuitPython library for use with the Adafruit AS7341 breakout
+CircuitPython library for use with the Adafruit AS7341 breakout.
+**NOTE**: Due to the size of this library, it may not work on M0 (ex: Trinket M0) and other
+low memory boards.
 
 
 Dependencies
