@@ -200,8 +200,8 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
     """Library for the AS7341 Sensor
 
 
-        :param ~busio.I2C i2c_bus: The I2C bus the AS7341 is connected to.
-        :param address: The I2C address of the sensor
+    :param ~busio.I2C i2c_bus: The I2C bus the AS7341 is connected to.
+    :param address: The I2C address of the sensor
 
     """
 
@@ -583,8 +583,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     @property
     def gain(self):
-        """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`
-        """
+        """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`"""
         return self._gain
 
     @gain.setter
