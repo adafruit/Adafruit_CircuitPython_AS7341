@@ -247,7 +247,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
         if not self._device_id in [_AS7341_DEVICE_ID]:
             raise RuntimeError("Failed to find an AS7341 sensor - check your wiring!")
-        self.reset()
         self.initialize()
         self._buffer = bytearray(2)
         self._low_channels_configured = False
@@ -255,16 +254,13 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         self._flicker_detection_1k_configured = False
 
     def initialize(self):
-        """Configure the sensors with the default settings. For use after calling `reset()`"""
+        """Configure the sensors with the default settings"""
 
         self._power_enabled = True
         self._led_control_enabled = True
         self.atime = 100
         self.astep = 999
         self.gain = Gain.GAIN_128X  # pylint:disable=no-member
-
-    def reset(self):
-        """Resets the internal registers and restores the default settings"""
 
     @property
     def all_channels(self):
