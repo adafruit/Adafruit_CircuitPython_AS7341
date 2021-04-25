@@ -6,3 +6,4 @@
 
 .. automodule:: adafruit_as7341
    :members:
+   :exclude-members: CV, Gain
