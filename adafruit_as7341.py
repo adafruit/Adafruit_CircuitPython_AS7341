@@ -609,7 +609,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     @property
     def gain(self):
-        """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`"""
+        """The ADC gain multiplier. Must be a valid :meth:`adafruit_as7341.Gain`"""
         return self._gain
 
     @gain.setter
