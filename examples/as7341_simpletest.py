@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: MIT
 from time import sleep
 import board
-import busio
 from adafruit_as7341 import AS7341
 
-i2c = busio.I2C(board.SCL, board.SDA)
+i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
 
 

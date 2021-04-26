@@ -199,9 +199,39 @@ SMUX_OUT = _SmuxOut(*list(range(7)))
 class AS7341:  # pylint:disable=too-many-instance-attributes
     """Library for the AS7341 Sensor
 
+    :param ~busio.I2C i2c_bus: The I2C bus the device is connected to
+    :param int address: The I2C device address. Defaults to :const:`0x39`
 
-    :param ~busio.I2C i2c_bus: The I2C bus the AS7341 is connected to.
-    :param address: The I2C address of the sensor
+
+    **Quickstart: Importing and using the device**
+
+        Here is an example of using the :class:`AS7341`.
+        First you will need to import the libraries to use the sensor
+
+        .. code-block:: python
+
+            import board
+            from adafruit_as7341 import AS7341
+
+        Once this is done you can define your `board.I2C` object and define your sensor object
+
+        .. code-block:: python
+
+            i2c = board.I2C()  # uses board.SCL and board.SDA
+            sensor = AS7341(i2c)
+
+        Now you have access to the different channels
+
+        .. code-block:: python
+
+            channel_415nm = channel_415nm
+            channel_445nm = channel_445nm
+            channel_480nm = channel_480nm
+            channel_515nm = channel_515nm
+            channel_555nm = channel_555nm
+            channel_590nm = channel_590nm
+            channel_630nm = channel_630nm
+            channel_680nm = channel_680nm
 
     """
 
@@ -331,7 +361,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
         start = monotonic()
         while not self._data_ready_bit:
             if monotonic() - start > timeout:
-                raise RuntimeError("Timeout occoured waiting for sensor data")
+                raise RuntimeError("Timeout occurred waiting for sensor data")
             sleep(0.001)
 
     def _write_register(self, addr, data):
@@ -579,7 +609,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes
 
     @property
     def gain(self):
-        """The ADC gain multiplier. Must be a valid `adafruit_as7341.Gain`"""
+        """The ADC gain multiplier. Must be a valid :meth:`adafruit_as7341.Gain`"""
         return self._gain
 
     @gain.setter

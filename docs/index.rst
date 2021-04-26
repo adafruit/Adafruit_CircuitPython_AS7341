@@ -23,8 +23,12 @@ Table of Contents
 .. toctree::
     :caption: Tutorials
 
+    Adafruit AS7341 10-Channel Light / Color Sensor Breakout Learning Guide <https://learn.adafruit.com/adafruit-as7341-10-channel-light-color-sensor-breakout/overview>
+
 .. toctree::
     :caption: Related Products
+
+    Adafruit AS7341 10-Channel Light / Color Sensor Breakout <https://www.adafruit.com/product/4698>
 
 .. toctree::
     :caption: Other Links

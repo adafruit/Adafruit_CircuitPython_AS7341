@@ -7,6 +7,7 @@ import adafruit_as7341
 
 i2c = board.I2C()
 sensor = adafruit_as7341.AS7341(i2c)
+
 print("out of init!")
 print("Current current is")
 print(sensor.led_current)
