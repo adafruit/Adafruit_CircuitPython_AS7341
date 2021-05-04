@@ -16,15 +16,19 @@ Implementation Notes
 
 **Hardware:**
 
-* `Adafruit AS7341 Breakout <https://www.adafruit.com/product/4698>`_
+* `Adafruit AS7341 Breakout
+  <https://www.adafruit.com/product/4698>`_ (Product ID: 4698)
 
 **Software and Dependencies:**
 
 * Adafruit CircuitPython firmware for the supported boards:
-  https://github.com/adafruit/circuitpython/releases
+  https://circuitpython.org/downloads
 
- * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
- * Adafruit's Register library: https://github.com/adafruit/Adafruit_CircuitPython_Register
+* Adafruit's Bus Device library:
+  https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
+
+* Adafruit's Register library:
+  https://github.com/adafruit/Adafruit_CircuitPython_Register
 
 """
 

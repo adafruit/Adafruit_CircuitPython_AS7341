@@ -5,7 +5,7 @@ from time import sleep
 import board
 import adafruit_as7341
 
-i2c = board.I2C()
+i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = adafruit_as7341.AS7341(i2c)
 
 print("out of init!")
