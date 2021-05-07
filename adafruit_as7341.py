@@ -16,23 +16,25 @@ Implementation Notes
 
 **Hardware:**
 
-* `Adafruit AS7341 Breakout <https://www.adafruit.com/product/4698>`_
+* `Adafruit AS7341 Breakout
+  <https://www.adafruit.com/product/4698>`_ (Product ID: 4698)
 
 **Software and Dependencies:**
 
 * Adafruit CircuitPython firmware for the supported boards:
-  https://github.com/adafruit/circuitpython/releases
+  https://circuitpython.org/downloads
 
- * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
- * Adafruit's Register library: https://github.com/adafruit/Adafruit_CircuitPython_Register
+* Adafruit's Bus Device library:
+  https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
+
+* Adafruit's Register library:
+  https://github.com/adafruit/Adafruit_CircuitPython_Register
 
 """
 
-# imports
-
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AS7341.git"
-from collections import namedtuple
+
 from time import sleep, monotonic
 from micropython import const
 import adafruit_bus_device.i2c_device as i2c_device
@@ -165,38 +167,58 @@ Gain.add_values(
 )
 
 
-_SmuxIn = namedtuple(
-    "_SmuxIn",
-    [
-        "NC_F3L",
-        "F1L_NC",
-        "NC_NC0",
-        "NC_F8L",
-        "F6L_NC",
-        "F2L_F4L",
-        "NC_F5L",
-        "F7L_NC",
-        "NC_CL",
-        "NC_F5R",
-        "F7R_NC",
-        "NC_NC1",
-        "NC_F2R",
-        "F4R_NC",
-        "F8R_F6R",
-        "NC_F3R",
-        "F1R_EXT_GPIO",
-        "EXT_INT_CR",
-        "NC_DARK",
-        "NIR_F",
-    ],
+class SMUX_OUT(CV):
+    """Options for ``smux_out``"""
+
+    pass  # pylint: disable=unnecessary-pass
+
+
+SMUX_OUT.add_values(
+    (
+        ("DISABLED", 0, 0, None),
+        ("ADC0", 1, 1, None),
+        ("ADC1", 2, 2, None),
+        ("ADC2", 3, 3, None),
+        ("ADC3", 4, 4, None),
+        ("ADC4", 5, 5, None),
+        ("ADC5", 6, 6, None),
+    )
 )
-SMUX_IN = _SmuxIn(*list(range(20)))
-
-_SmuxOut = namedtuple("_SmuxOut", "DISABLED ADC0 ADC1 ADC2 ADC3 ADC4 ADC5")
-SMUX_OUT = _SmuxOut(*list(range(7)))
 
 
-class AS7341:  # pylint:disable=too-many-instance-attributes
+class SMUX_IN(CV):
+    """Options for ``smux_in``"""
+
+    pass  # pylint: disable=unnecessary-pass
+
+
+SMUX_IN.add_values(
+    (
+        ("NC_F3L", 0, 0, None),
+        ("F1L_NC", 1, 1, None),
+        ("NC_NC0", 2, 2, None),
+        ("NC_F8L", 3, 3, None),
+        ("F6L_NC", 4, 4, None),
+        ("F2L_F4L", 5, 5, None),
+        ("NC_F5L", 6, 6, None),
+        ("F7L_NC", 7, 7, None),
+        ("NC_CL", 8, 8, None),
+        ("NC_F5R", 9, 9, None),
+        ("F7R_NC", 10, 10, None),
+        ("NC_NC1", 11, 11, None),
+        ("NC_F2R", 12, 12, None),
+        ("F4R_NC", 13, 13, None),
+        ("F8R_F6R", 14, 14, None),
+        ("NC_F3R", 15, 15, None),
+        ("F1R_EXT_GPIO", 16, 16, None),
+        ("EXT_INT_CR", 17, 17, None),
+        ("NC_DARK", 18, 18, None),
+        ("NIR_F", 19, 19, None),
+    )
+)
+
+
+class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     """Library for the AS7341 Sensor
 
     :param ~busio.I2C i2c_bus: The I2C bus the device is connected to
