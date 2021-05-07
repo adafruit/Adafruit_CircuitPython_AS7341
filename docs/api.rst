@@ -6,4 +6,4 @@
 
 .. automodule:: adafruit_as7341
    :members:
-   :exclude-members: CV, Gain
+   :exclude-members: CV, Gain, SMUX_IN, SMUX_OUT
