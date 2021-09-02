@@ -383,7 +383,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         return self._channel_4_data
 
     @property
-    def channel_clear(self):
+    def channel_nir(self):
         """The current reading for the NIR (near-IR) sensor"""
         self._configure_f5_f8()
         return self._channel_5_data
