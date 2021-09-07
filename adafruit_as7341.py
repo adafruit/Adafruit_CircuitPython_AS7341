@@ -375,7 +375,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         """The current reading for the 680nm band"""
         self._configure_f5_f8()
         return self._channel_3_data
-      
+
     @property
     def channel_clear(self):
         """The current reading for the clear sensor"""
