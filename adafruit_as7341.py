@@ -376,7 +376,17 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._configure_f5_f8()
         return self._channel_3_data
 
-    # TODO: Add clear and NIR accessors
+    @property
+    def channel_clear(self):
+        """The current reading for the clear sensor"""
+        self._configure_f5_f8()
+        return self._channel_4_data
+
+    @property
+    def channel_nir(self):
+        """The current reading for the NIR (near-IR) sensor"""
+        self._configure_f5_f8()
+        return self._channel_5_data
 
     def _wait_for_data(self, timeout=1.0):
         """Wait for sensor data to be ready"""

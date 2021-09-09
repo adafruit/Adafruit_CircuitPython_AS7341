@@ -87,6 +87,8 @@ Usage Example
         print("F6 - 590nm/Yellow  %s" % bar_graph(sensor.channel_590nm))
         print("F7 - 630nm/Orange  %s" % bar_graph(sensor.channel_630nm))
         print("F8 - 680nm/Red     %s" % bar_graph(sensor.channel_680nm))
+        print("Clear              %s" % bar_graph(sensor.channel_clear))
+        print("Near-IR (NIR)      %s" % bar_graph(sensor.channel_nir))
         print("\n------------------------------------------------")
         sleep(1)
 
