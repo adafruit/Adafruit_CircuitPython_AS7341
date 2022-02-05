@@ -246,14 +246,14 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
 
         .. code-block:: python
 
-            channel_415nm = channel_415nm
-            channel_445nm = channel_445nm
-            channel_480nm = channel_480nm
-            channel_515nm = channel_515nm
-            channel_555nm = channel_555nm
-            channel_590nm = channel_590nm
-            channel_630nm = channel_630nm
-            channel_680nm = channel_680nm
+            channel_415nm = sensor.channel_415nm
+            channel_445nm = sensor.channel_445nm
+            channel_480nm = sensor.channel_480nm
+            channel_515nm = sensor.channel_515nm
+            channel_555nm = sensor.channel_555nm
+            channel_590nm = sensor.channel_590nm
+            channel_630nm = sensor.channel_630nm
+            channel_680nm = sensor.channel_680nm
 
     """
 
