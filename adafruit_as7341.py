@@ -49,7 +49,7 @@ try:
     # Only needed for typing
     import busio  # pylint: disable=unused-import
 
-    TCallable = TypeVar('TCallable', bound=Callable[..., Any])
+    TCallable = TypeVar("TCallable", bound=Callable[..., Any])
 
 except ImportError:
     pass
@@ -113,9 +113,7 @@ _AS7341_GPIO2 = const(
 )  # GPIO Settings and status: polarity, direction, sets output, reads
 _AS7341_ASTEP_L: int = const(0xCA)  # Integration step size ow byte
 _AS7341_ASTEP_H: int = const(0xCB)  # Integration step size high byte
-_AS7341_FD_TIME1: int = const(
-    0xD8
-)  # Flicker detection integration time low byte
+_AS7341_FD_TIME1: int = const(0xD8)  # Flicker detection integration time low byte
 _AS7341_FD_TIME2: int = const(0xDA)  # Flicker detection gain and high nibble
 _AS7341_FD_STATUS: int = const(
     0xDB
