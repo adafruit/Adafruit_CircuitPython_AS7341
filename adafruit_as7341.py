@@ -657,7 +657,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.NIR_F, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
 
-    def _set_smux(self, smux_addr, smux_out1, smux_out2):
+    def _set_smux(self, smux_addr: int, smux_out1: int, smux_out2: int) -> None:
         """Connect a pair of sensors to an ADC channel"""
         low_nibble = smux_out1
         high_nibble = smux_out2 << 4
@@ -665,7 +665,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._write_register(smux_addr, smux_byte)
 
     @property
-    def gain(self) -> Gain:
+    def gain(self) -> int:
         """The ADC gain multiplier. Must be a valid :meth:`adafruit_as7341.Gain`"""
         return self._gain
 
@@ -676,11 +676,11 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._gain = gain_value
 
     @property
-    def _smux_enabled(self) -> RWBit:
+    def _smux_enabled(self) -> bool:
         return self._smux_enable_bit
 
     @_smux_enabled.setter
-    def _smux_enabled(self, enable_smux: RWBit):
+    def _smux_enabled(self, enable_smux: bool):
         self._low_bank_active = False
         self._smux_enable_bit = enable_smux
         while self._smux_enable_bit is True:
@@ -703,21 +703,21 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
 
     @property
     @_low_bank
-    def led(self) -> RWBit:
+    def led(self) -> bool:
         """The  attached LED. Set to True to turn on, False to turn off"""
         return self._led_enabled
 
     @led.setter
     @_low_bank
-    def led(self, led_on: RWBit) -> None:
+    def led(self, led_on: bool) -> None:
         self._led_enabled = led_on
 
     @property
     @_low_bank
-    def _led_control_enabled(self) -> RWBit:
+    def _led_control_enabled(self) -> bool:
         return self._led_control_enable_bit
 
     @_led_control_enabled.setter
     @_low_bank
-    def _led_control_enabled(self, enabled: RWBit) -> None:
+    def _led_control_enabled(self, enabled: bool) -> None:
         self._led_control_enable_bit = enabled
