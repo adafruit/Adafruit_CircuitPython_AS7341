@@ -44,18 +44,23 @@ from adafruit_register.i2c_bit import RWBit
 from adafruit_register.i2c_bits import ROBits, RWBits
 
 try:
+    from typing import Tuple, Optional, Any, Callable, TypeVar
+
     # Only needed for typing
     import busio  # pylint: disable=unused-import
-    from typing import Tuple, Optional
+
+    TCallable = TypeVar('TCallable', bound=Callable[..., Any])
+
 except ImportError:
     pass
 
-
-_AS7341_DEVICE_ID: int = const(0b001001)  # Correct content of WHO_AM_I register
+# Correct content of WHO_AM_I register
+_AS7341_DEVICE_ID: int = const(0b001001)
 _AS7341_I2CADDR_DEFAULT: int = const(0x39)  # AS7341 default i2c address
 _AS7341_CHIP_ID: int = const(0x09)  # AS7341 default device id from WHOAMI
 _AS7341_WHOAMI: int = const(0x92)  # Chip ID register
-_AS7341_CONFIG: int = const(0x70)  # Enables LED control and sets light sensing mode
+# Enables LED control and sets light sensing mode
+_AS7341_CONFIG: int = const(0x70)
 _AS7341_GPIO: int = const(0x73)  # Connects photo diode to GPIO or INT pins
 _AS7341_LED: int = const(0x74)  # LED Register; Enables and sets current limit
 _AS7341_ENABLE: int = const(
@@ -63,10 +68,14 @@ _AS7341_ENABLE: int = const(
 )  # Main enable register. Controls SMUX, Flicker Detection,Spectral and
 # Power
 _AS7341_ATIME: int = const(0x81)  # Sets ADC integration step count
-_AS7341_SP_LOW_TH_L: int = const(0x84)  # Spectral measurement Low Threshold low byte
-_AS7341_SP_LOW_TH_H: int = const(0x85)  # 0 Spectral measurement Low Threshold high byte
-_AS7341_SP_HIGH_TH_L: int = const(0x86)  # Spectral measurement High Threshold low byte
-_AS7341_SP_HIGH_TH_H: int = const(0x87)  # Spectral measurement High Threshold low byte
+# Spectral measurement Low Threshold low byte
+_AS7341_SP_LOW_TH_L: int = const(0x84)
+# 0 Spectral measurement Low Threshold high byte
+_AS7341_SP_LOW_TH_H: int = const(0x85)
+# Spectral measurement High Threshold low byte
+_AS7341_SP_HIGH_TH_L: int = const(0x86)
+# Spectral measurement High Threshold low byte
+_AS7341_SP_HIGH_TH_H: int = const(0x87)
 _AS7341_STATUS: int = const(
     0x93
 )  # Interrupt status registers. Indicates the occourance of an interrupt
@@ -104,7 +113,9 @@ _AS7341_GPIO2 = const(
 )  # GPIO Settings and status: polarity, direction, sets output, reads
 _AS7341_ASTEP_L: int = const(0xCA)  # Integration step size ow byte
 _AS7341_ASTEP_H: int = const(0xCB)  # Integration step size high byte
-_AS7341_FD_TIME1: int = const(0xD8)  # Flicker detection integration time low byte
+_AS7341_FD_TIME1: int = const(
+    0xD8
+)  # Flicker detection integration time low byte
 _AS7341_FD_TIME2: int = const(0xDA)  # Flicker detection gain and high nibble
 _AS7341_FD_STATUS: int = const(
     0xDB
@@ -114,9 +125,9 @@ _AS7341_CONTROL: int = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
 _AS7341_FD_CFG0: int = const(0xD7)  # Enables FIFO for flicker detection
 
 
-def _low_bank(func) -> any:
+def _low_bank(func: TCallable) -> Callable[[Any], TCallable]:
     # pylint:disable=protected-access
-    def _decorator(self, *args, **kwargs):
+    def _decorator(self, *args, **kwargs) -> TCallable:
         self._low_bank_active = True
         retval = func(self, *args, **kwargs)
         self._low_bank_active = False
@@ -131,7 +142,7 @@ class CV:
     @classmethod
     def add_values(
         cls,
-        value_tuples: Tuple[str, int, any, any],
+        value_tuples: Tuple[str, int, int, Optional[float]],
     ) -> None:
         """Add CV values to the class"""
         cls.string = {}
@@ -309,8 +320,8 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     """
 
     def __init__(
-        self, i2c_bus: busio.I2C, address: Optional[int] = _AS7341_I2CADDR_DEFAULT
-    ):
+        self, i2c_bus: busio.I2C, address: int = _AS7341_I2CADDR_DEFAULT
+    ) -> None:
 
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
         if not self._device_id in [_AS7341_DEVICE_ID]:
@@ -331,7 +342,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self.gain = Gain.GAIN_128X  # pylint:disable=no-member
 
     @property
-    def all_channels(self) -> Struct:
+    def all_channels(self) -> Tuple[int, ...]:
         """The current readings for all six ADC channels"""
 
         self._configure_f1_f4()
@@ -345,66 +356,66 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         return reads
 
     @property
-    def channel_415nm(self) -> UnaryStruct:
+    def channel_415nm(self) -> int:
         """The current reading for the 415nm band"""
         self._configure_f1_f4()
         return self._channel_0_data
 
     @property
-    def channel_445nm(self) -> UnaryStruct:
+    def channel_445nm(self) -> int:
         """The current reading for the 445nm band"""
         self._configure_f1_f4()
         return self._channel_1_data
 
     @property
-    def channel_480nm(self) -> UnaryStruct:
+    def channel_480nm(self) -> int:
         """The current reading for the 480nm band"""
         self._configure_f1_f4()
         return self._channel_2_data
 
     @property
-    def channel_515nm(self) -> UnaryStruct:
+    def channel_515nm(self) -> int:
         """The current reading for the 515nm band"""
         self._configure_f1_f4()
         return self._channel_3_data
 
     @property
-    def channel_555nm(self) -> UnaryStruct:
+    def channel_555nm(self) -> int:
         """The current reading for the 555nm band"""
         self._configure_f5_f8()
         return self._channel_0_data
 
     @property
-    def channel_590nm(self) -> UnaryStruct:
+    def channel_590nm(self) -> int:
         """The current reading for the 590nm band"""
         self._configure_f5_f8()
         return self._channel_1_data
 
     @property
-    def channel_630nm(self) -> UnaryStruct:
+    def channel_630nm(self) -> int:
         """The current reading for the 630nm band"""
         self._configure_f5_f8()
         return self._channel_2_data
 
     @property
-    def channel_680nm(self) -> UnaryStruct:
+    def channel_680nm(self) -> int:
         """The current reading for the 680nm band"""
         self._configure_f5_f8()
         return self._channel_3_data
 
     @property
-    def channel_clear(self) -> UnaryStruct:
+    def channel_clear(self) -> int:
         """The current reading for the clear sensor"""
         self._configure_f5_f8()
         return self._channel_4_data
 
     @property
-    def channel_nir(self) -> UnaryStruct:
+    def channel_nir(self) -> int:
         """The current reading for the NIR (near-IR) sensor"""
         self._configure_f5_f8()
         return self._channel_5_data
 
-    def _wait_for_data(self, timeout: int = 1.0) -> None:
+    def _wait_for_data(self, timeout: Optional[int] = 1.0) -> None:
         """Wait for sensor data to be ready"""
         start = monotonic()
         while not self._data_ready_bit:
