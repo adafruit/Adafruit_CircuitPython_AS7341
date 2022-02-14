@@ -113,7 +113,9 @@ _AS7341_GPIO2 = const(
 )  # GPIO Settings and status: polarity, direction, sets output, reads
 _AS7341_ASTEP_L: int = const(0xCA)  # Integration step size ow byte
 _AS7341_ASTEP_H: int = const(0xCB)  # Integration step size high byte
-_AS7341_FD_TIME1: int = const(0xD8)  # Flicker detection integration time low byte
+_AS7341_FD_TIME1: int = const(
+    0xD8
+)  # Flicker detection integration time low byte
 _AS7341_FD_TIME2: int = const(0xDA)  # Flicker detection gain and high nibble
 _AS7341_FD_STATUS: int = const(
     0xDB
@@ -123,9 +125,9 @@ _AS7341_CONTROL: int = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
 _AS7341_FD_CFG0: int = const(0xD7)  # Enables FIFO for flicker detection
 
 
-def _low_bank(func: TCallable) -> Callable[[Any], TCallable]:
+def _low_bank(func: Any) -> Any:
     # pylint:disable=protected-access
-    def _decorator(self, *args, **kwargs) -> TCallable:
+    def _decorator(self, *args, **kwargs) -> Any:
         self._low_bank_active = True
         retval = func(self, *args, **kwargs)
         self._low_bank_active = False
