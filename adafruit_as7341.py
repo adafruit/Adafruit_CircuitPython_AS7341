@@ -168,9 +168,35 @@ class CV:
 
 
 class Gain(CV):
-    """Options for ``accelerometer_range``"""
+    """Options for ``accelerometer_range``
 
-    pass  # pylint: disable=unnecessary-pass
+    +-------------------------------+-------------------------+
+    | Setting                       | Gain Value              |
+    +===============================+=========================+
+    | :py:const:`Gain.GAIN_0_5X`    | 0.5                     |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_1X`      | 1                       |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_2X`      | 2                       |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_4X`      | 4                       |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_8X`      | 8                       |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_16X`     | 16                      |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_32X`     | 32                      |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_64X`     | 64                      |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_128X`    | 128                     |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_256X`    | 256                     |
+    +-------------------------------+-------------------------+
+    | :py:const:`Gain.GAIN_512X`    | 512                     |
+    +-------------------------------+-------------------------+
+
+    """
 
 
 Gain.add_values(
@@ -193,8 +219,6 @@ Gain.add_values(
 class SMUX_OUT(CV):
     """Options for ``smux_out``"""
 
-    pass  # pylint: disable=unnecessary-pass
-
 
 SMUX_OUT.add_values(
     (
@@ -211,8 +235,6 @@ SMUX_OUT.add_values(
 
 class SMUX_IN(CV):
     """Options for ``smux_in``"""
-
-    pass  # pylint: disable=unnecessary-pass
 
 
 SMUX_IN.add_values(
