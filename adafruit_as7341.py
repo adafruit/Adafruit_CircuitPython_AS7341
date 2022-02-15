@@ -43,69 +43,89 @@ from adafruit_register.i2c_struct import UnaryStruct, Struct  # , ROUnaryStruct
 from adafruit_register.i2c_bit import RWBit
 from adafruit_register.i2c_bits import ROBits, RWBits
 
-_AS7341_DEVICE_ID = const(0b001001)  # Correct content of WHO_AM_I register
-_AS7341_I2CADDR_DEFAULT = const(0x39)  # AS7341 default i2c address
-_AS7341_CHIP_ID = const(0x09)  # AS7341 default device id from WHOAMI
-_AS7341_WHOAMI = const(0x92)  # Chip ID register
-_AS7341_CONFIG = const(0x70)  # Enables LED control and sets light sensing mode
-_AS7341_GPIO = const(0x73)  # Connects photo diode to GPIO or INT pins
-_AS7341_LED = const(0x74)  # LED Register; Enables and sets current limit
-_AS7341_ENABLE = const(
+try:
+    from typing import Tuple, Optional, Any, Callable, TypeVar
+
+    # Only needed for typing
+    import busio  # pylint: disable=unused-import
+
+    TCallable = TypeVar("TCallable", bound=Callable[..., Any])
+
+except ImportError:
+    pass
+
+# Correct content of WHO_AM_I register
+_AS7341_DEVICE_ID: int = const(0b001001)
+_AS7341_I2CADDR_DEFAULT: int = const(0x39)  # AS7341 default i2c address
+_AS7341_CHIP_ID: int = const(0x09)  # AS7341 default device id from WHOAMI
+_AS7341_WHOAMI: int = const(0x92)  # Chip ID register
+# Enables LED control and sets light sensing mode
+_AS7341_CONFIG: int = const(0x70)
+_AS7341_GPIO: int = const(0x73)  # Connects photo diode to GPIO or INT pins
+_AS7341_LED: int = const(0x74)  # LED Register; Enables and sets current limit
+_AS7341_ENABLE: int = const(
     0x80
-)  # Main enable register. Controls SMUX, Flicker Detection,Spectral and Power
-_AS7341_ATIME = const(0x81)  # Sets ADC integration step count
-_AS7341_SP_LOW_TH_L = const(0x84)  # Spectral measurement Low Threshold low byte
-_AS7341_SP_LOW_TH_H = const(0x85)  # 0 Spectral measurement Low Threshold high byte
-_AS7341_SP_HIGH_TH_L = const(0x86)  # Spectral measurement High Threshold low byte
-_AS7341_SP_HIGH_TH_H = const(0x87)  # Spectral measurement High Threshold low byte
-_AS7341_STATUS = const(
+)  # Main enable register. Controls SMUX, Flicker Detection,Spectral and
+# Power
+_AS7341_ATIME: int = const(0x81)  # Sets ADC integration step count
+# Spectral measurement Low Threshold low byte
+_AS7341_SP_LOW_TH_L: int = const(0x84)
+# 0 Spectral measurement Low Threshold high byte
+_AS7341_SP_LOW_TH_H: int = const(0x85)
+# Spectral measurement High Threshold low byte
+_AS7341_SP_HIGH_TH_L: int = const(0x86)
+# Spectral measurement High Threshold low byte
+_AS7341_SP_HIGH_TH_H: int = const(0x87)
+_AS7341_STATUS: int = const(
     0x93
 )  # Interrupt status registers. Indicates the occourance of an interrupt
-_AS7341_ASTATUS = const(
+_AS7341_ASTATUS: int = const(
     0x94
 )  # Spectral Saturation and Gain status. Reading from here latches the data
-_AS7341_CH0_DATA_L = const(0x95)  # ADC Channel 0 Data
-_AS7341_CH0_DATA_H = const(0x96)  # ADC Channel 0 Data
-_AS7341_CH1_DATA_L = const(0x97)  # ADC Channel 1 Data
-_AS7341_CH1_DATA_H = const(0x98)  # ADC Channel 1 Data
-_AS7341_CH2_DATA_L = const(0x99)  # ADC Channel 2 Data
-_AS7341_CH2_DATA_H = const(0x9A)  # ADC Channel 2 Data
-_AS7341_CH3_DATA_L = const(0x9B)  # ADC Channel 3 Data
-_AS7341_CH3_DATA_H = const(0x9C)  # ADC Channel 3 Data
-_AS7341_CH4_DATA_L = const(0x9D)  # ADC Channel 4 Data
-_AS7341_CH4_DATA_H = const(0x9E)  # ADC Channel 4 Data
-_AS7341_CH5_DATA_L = const(0x9F)  # ADC Channel 5 Data
-_AS7341_CH5_DATA_H = const(0xA0)  # ADC Channel 5 Data
-_AS7341_STATUS2 = const(0xA3)  # Measurement status flags; saturation, validity
-_AS7341_STATUS3 = const(0xA4)  # Spectral interrupt source, high or low threshold
-_AS7341_CFG0 = const(
+_AS7341_CH0_DATA_L: int = const(0x95)  # ADC Channel 0 Data
+_AS7341_CH0_DATA_H: int = const(0x96)  # ADC Channel 0 Data
+_AS7341_CH1_DATA_L: int = const(0x97)  # ADC Channel 1 Data
+_AS7341_CH1_DATA_H: int = const(0x98)  # ADC Channel 1 Data
+_AS7341_CH2_DATA_L: int = const(0x99)  # ADC Channel 2 Data
+_AS7341_CH2_DATA_H: int = const(0x9A)  # ADC Channel 2 Data
+_AS7341_CH3_DATA_L: int = const(0x9B)  # ADC Channel 3 Data
+_AS7341_CH3_DATA_H: int = const(0x9C)  # ADC Channel 3 Data
+_AS7341_CH4_DATA_L: int = const(0x9D)  # ADC Channel 4 Data
+_AS7341_CH4_DATA_H: int = const(0x9E)  # ADC Channel 4 Data
+_AS7341_CH5_DATA_L: int = const(0x9F)  # ADC Channel 5 Data
+_AS7341_CH5_DATA_H: int = const(0xA0)  # ADC Channel 5 Data
+_AS7341_STATUS2: int = const(0xA3)  # Measurement status flags; saturation, validity
+_AS7341_STATUS3: int = const(0xA4)  # Spectral interrupt source, high or low threshold
+_AS7341_CFG0: int = const(
     0xA9
 )  # Sets Low power mode, Register bank, and Trigger lengthening
-_AS7341_CFG1 = const(0xAA)  # Controls ADC Gain
-_AS7341_CFG6 = const(0xAF)  # Used to configure Smux
-_AS7341_CFG9 = const(0xB2)  # flicker detect and SMUX command system ints
-_AS7341_CFG12 = const(0xB5)  # ADC channel for interrupts, persistence and auto-gain
+_AS7341_CFG1: int = const(0xAA)  # Controls ADC Gain
+_AS7341_CFG6: int = const(0xAF)  # Used to configure Smux
+_AS7341_CFG9: int = const(0xB2)  # flicker detect and SMUX command system ints
+_AS7341_CFG12: int = const(
+    0xB5
+)  # ADC channel for interrupts, persistence and auto-gain
 _AS7341_PERS = const(
     0xBD
 )  # number of measurements outside thresholds to trigger an interrupt
 _AS7341_GPIO2 = const(
     0xBE
 )  # GPIO Settings and status: polarity, direction, sets output, reads
-_AS7341_ASTEP_L = const(0xCA)  # Integration step size ow byte
-_AS7341_ASTEP_H = const(0xCB)  # Integration step size high byte
-_AS7341_FD_TIME1 = const(0xD8)  # Flicker detection integration time low byte
-_AS7341_FD_TIME2 = const(0xDA)  # Flicker detection gain and high nibble
-_AS7341_FD_STATUS = const(
+_AS7341_ASTEP_L: int = const(0xCA)  # Integration step size ow byte
+_AS7341_ASTEP_H: int = const(0xCB)  # Integration step size high byte
+_AS7341_FD_TIME1: int = const(0xD8)  # Flicker detection integration time low byte
+_AS7341_FD_TIME2: int = const(0xDA)  # Flicker detection gain and high nibble
+_AS7341_FD_STATUS: int = const(
     0xDB
 )  # Flicker detection status; measurement valid, saturation, flicker
-_AS7341_INTENAB = const(0xF9)  # Enables individual interrupt types
-_AS7341_CONTROL = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
-_AS7341_FD_CFG0 = const(0xD7)  # Enables FIFO for flicker detection
+_AS7341_INTENAB: int = const(0xF9)  # Enables individual interrupt types
+_AS7341_CONTROL: int = const(0xFA)  # Auto-zero, fifo clear, clear SAI active
+_AS7341_FD_CFG0: int = const(0xD7)  # Enables FIFO for flicker detection
 
 
-def _low_bank(func):
+def _low_bank(func: Any) -> Any:
     # pylint:disable=protected-access
-    def _decorator(self, *args, **kwargs):
+    def _decorator(self, *args, **kwargs) -> Any:
         self._low_bank_active = True
         retval = func(self, *args, **kwargs)
         self._low_bank_active = False
@@ -118,7 +138,10 @@ class CV:
     """struct helper"""
 
     @classmethod
-    def add_values(cls, value_tuples):
+    def add_values(
+        cls,
+        value_tuples: Tuple[str, int, int, Optional[float]],
+    ) -> None:
         """Add CV values to the class"""
         cls.string = {}
         cls.lsb = {}
@@ -130,7 +153,7 @@ class CV:
             cls.lsb[value] = lsb
 
     @classmethod
-    def is_valid(cls, value):
+    def is_valid(cls, value: str) -> bool:
         """Validate that a given value is a member"""
         return value in cls.string
 
@@ -257,44 +280,46 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
 
     """
 
-    _device_id = ROBits(6, _AS7341_WHOAMI, 2)
+    _device_id: ROBits = ROBits(6, _AS7341_WHOAMI, 2)
 
-    _smux_enable_bit = RWBit(_AS7341_ENABLE, 4)
-    _led_control_enable_bit = RWBit(_AS7341_CONFIG, 3)
-    _color_meas_enabled = RWBit(_AS7341_ENABLE, 1)
-    _power_enabled = RWBit(_AS7341_ENABLE, 0)
+    _smux_enable_bit: RWBit = RWBit(_AS7341_ENABLE, 4)
+    _led_control_enable_bit: RWBit = RWBit(_AS7341_CONFIG, 3)
+    _color_meas_enabled: RWBit = RWBit(_AS7341_ENABLE, 1)
+    _power_enabled: RWBit = RWBit(_AS7341_ENABLE, 0)
 
-    _low_bank_active = RWBit(_AS7341_CFG0, 4)
-    _smux_command = RWBits(2, _AS7341_CFG6, 3)
-    _fd_status = UnaryStruct(_AS7341_FD_STATUS, "<B")
+    _low_bank_active: RWBit = RWBit(_AS7341_CFG0, 4)
+    _smux_command: RWBits = RWBits(2, _AS7341_CFG6, 3)
+    _fd_status: UnaryStruct = UnaryStruct(_AS7341_FD_STATUS, "<B")
 
-    _channel_0_data = UnaryStruct(_AS7341_CH0_DATA_L, "<H")
-    _channel_1_data = UnaryStruct(_AS7341_CH1_DATA_L, "<H")
-    _channel_2_data = UnaryStruct(_AS7341_CH2_DATA_L, "<H")
-    _channel_3_data = UnaryStruct(_AS7341_CH3_DATA_L, "<H")
-    _channel_4_data = UnaryStruct(_AS7341_CH4_DATA_L, "<H")
-    _channel_5_data = UnaryStruct(_AS7341_CH5_DATA_L, "<H")
+    _channel_0_data: UnaryStruct = UnaryStruct(_AS7341_CH0_DATA_L, "<H")
+    _channel_1_data: UnaryStruct = UnaryStruct(_AS7341_CH1_DATA_L, "<H")
+    _channel_2_data: UnaryStruct = UnaryStruct(_AS7341_CH2_DATA_L, "<H")
+    _channel_3_data: UnaryStruct = UnaryStruct(_AS7341_CH3_DATA_L, "<H")
+    _channel_4_data: UnaryStruct = UnaryStruct(_AS7341_CH4_DATA_L, "<H")
+    _channel_5_data: UnaryStruct = UnaryStruct(_AS7341_CH5_DATA_L, "<H")
 
     # "Reading the ASTATUS register (0x60 or 0x94) latches
     # all 12 spectral data bytes to that status read." Datasheet Sec. 10.2.7
-    _all_channels = Struct(_AS7341_ASTATUS, "<BHHHHHH")
-    _led_current_bits = RWBits(7, _AS7341_LED, 0)
+    _all_channels: Struct = Struct(_AS7341_ASTATUS, "<BHHHHHH")
+    _led_current_bits: RWBits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
-    atime = UnaryStruct(_AS7341_ATIME, "<B")
+    atime: UnaryStruct = UnaryStruct(_AS7341_ATIME, "<B")
     """The integration time step count.
     Total integration time will be ``(ATIME + 1) * (ASTEP + 1) * 2.78µS``
     """
-    astep = UnaryStruct(_AS7341_ASTEP_L, "<H")
+    astep: UnaryStruct = UnaryStruct(_AS7341_ASTEP_L, "<H")
     """ The integration time step size in 2.78 microsecond increments"""
-    _gain = UnaryStruct(_AS7341_CFG1, "<B")
-    _data_ready_bit = RWBit(_AS7341_STATUS2, 6)
+    _gain: UnaryStruct = UnaryStruct(_AS7341_CFG1, "<B")
+    _data_ready_bit: RWBit = RWBit(_AS7341_STATUS2, 6)
     """
  * @brief
  *
  * @return true: success false: failure
     """
 
-    def __init__(self, i2c_bus, address=_AS7341_I2CADDR_DEFAULT):
+    def __init__(
+        self, i2c_bus: busio.I2C, address: int = _AS7341_I2CADDR_DEFAULT
+    ) -> None:
 
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
         if not self._device_id in [_AS7341_DEVICE_ID]:
@@ -305,7 +330,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._high_channels_configured = False
         self._flicker_detection_1k_configured = False
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Configure the sensors with the default settings"""
 
         self._power_enabled = True
@@ -315,7 +340,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self.gain = Gain.GAIN_128X  # pylint:disable=no-member
 
     @property
-    def all_channels(self):
+    def all_channels(self) -> Tuple[int, ...]:
         """The current readings for all six ADC channels"""
 
         self._configure_f1_f4()
@@ -329,66 +354,66 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         return reads
 
     @property
-    def channel_415nm(self):
+    def channel_415nm(self) -> int:
         """The current reading for the 415nm band"""
         self._configure_f1_f4()
         return self._channel_0_data
 
     @property
-    def channel_445nm(self):
+    def channel_445nm(self) -> int:
         """The current reading for the 445nm band"""
         self._configure_f1_f4()
         return self._channel_1_data
 
     @property
-    def channel_480nm(self):
+    def channel_480nm(self) -> int:
         """The current reading for the 480nm band"""
         self._configure_f1_f4()
         return self._channel_2_data
 
     @property
-    def channel_515nm(self):
+    def channel_515nm(self) -> int:
         """The current reading for the 515nm band"""
         self._configure_f1_f4()
         return self._channel_3_data
 
     @property
-    def channel_555nm(self):
+    def channel_555nm(self) -> int:
         """The current reading for the 555nm band"""
         self._configure_f5_f8()
         return self._channel_0_data
 
     @property
-    def channel_590nm(self):
+    def channel_590nm(self) -> int:
         """The current reading for the 590nm band"""
         self._configure_f5_f8()
         return self._channel_1_data
 
     @property
-    def channel_630nm(self):
+    def channel_630nm(self) -> int:
         """The current reading for the 630nm band"""
         self._configure_f5_f8()
         return self._channel_2_data
 
     @property
-    def channel_680nm(self):
+    def channel_680nm(self) -> int:
         """The current reading for the 680nm band"""
         self._configure_f5_f8()
         return self._channel_3_data
 
     @property
-    def channel_clear(self):
+    def channel_clear(self) -> int:
         """The current reading for the clear sensor"""
         self._configure_f5_f8()
         return self._channel_4_data
 
     @property
-    def channel_nir(self):
+    def channel_nir(self) -> int:
         """The current reading for the NIR (near-IR) sensor"""
         self._configure_f5_f8()
         return self._channel_5_data
 
-    def _wait_for_data(self, timeout=1.0):
+    def _wait_for_data(self, timeout: float = 1.0) -> None:
         """Wait for sensor data to be ready"""
         start = monotonic()
         while not self._data_ready_bit:
@@ -396,7 +421,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
                 raise RuntimeError("Timeout occurred waiting for sensor data")
             sleep(0.001)
 
-    def _write_register(self, addr, data):
+    def _write_register(self, addr: int, data: int) -> None:
 
         self._buffer[0] = addr
         self._buffer[1] = data
@@ -404,7 +429,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         with self.i2c_device as i2c:
             i2c.write(self._buffer)
 
-    def _configure_f1_f4(self):
+    def _configure_f1_f4(self) -> None:
         """Configure the sensor to read from elements F1-F4, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
         if self._low_channels_configured:
@@ -427,7 +452,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._low_channels_configured = True
         self._wait_for_data()
 
-    def _configure_f5_f8(self):
+    def _configure_f5_f8(self) -> None:
         """Configure the sensor to read from elements F5-F8, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
         if self._high_channels_configured:
@@ -452,7 +477,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._wait_for_data()
 
     @property
-    def flicker_detected(self):
+    def flicker_detected(self) -> Optional[int]:
         """The flicker frequency detected in Hertz"""
         if not self._flicker_detection_1k_configured:
             AttributeError(
@@ -468,20 +493,20 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         # if we haven't returned yet either there was an error or an unknown frequency was detected
 
     @property
-    def flicker_detection_enabled(self):
+    def flicker_detection_enabled(self) -> bool:
         """The flicker detection status of the sensor. True if the sensor is configured\
             to detect flickers. Currently only 1000Hz and 1200Hz flicker detection is supported
         """
         return self._flicker_detection_1k_configured
 
     @flicker_detection_enabled.setter
-    def flicker_detection_enabled(self, flicker_enable):
+    def flicker_detection_enabled(self, flicker_enable: bool) -> None:
         if flicker_enable:
             self._configure_1k_flicker_detection()
         else:
             self._configure_f1_f4()  # sane default
 
-    def _f1f4_clear_nir(self):
+    def _f1f4_clear_nir(self) -> None:
         """Configure SMUX for sensors F1-F4, Clear and NIR"""
         self._set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.ADC2)
         self._set_smux(SMUX_IN.F1L_NC, SMUX_OUT.ADC0, SMUX_OUT.DISABLED)
@@ -504,7 +529,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
 
-    def _f5f8_clear_nir(self):
+    def _f5f8_clear_nir(self) -> None:
         # SMUX Config for F5,F6,F7,F8,NIR,Clear
         self._set_smux(SMUX_IN.NC_F3L, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.F1L_NC, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
@@ -528,7 +553,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._set_smux(SMUX_IN.NIR_F, SMUX_OUT.ADC5, SMUX_OUT.DISABLED)
 
     # TODO: Convert as much of this as possible to properties or named attributes
-    def _configure_1k_flicker_detection(self):
+    def _configure_1k_flicker_detection(self) -> None:
         self._low_channels_configured = False
         self._high_channels_configured = False
 
@@ -603,7 +628,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
 
         self._flicker_detection_1k_configured = True
 
-    def _smux_template(self):
+    def _smux_template(self) -> None:
         # SMUX_OUT.DISABLED
         # SMUX_OUT.ADC0
         # SMUX_OUT.ADC1
@@ -632,7 +657,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._set_smux(SMUX_IN.NC_DARK, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
         self._set_smux(SMUX_IN.NIR_F, SMUX_OUT.DISABLED, SMUX_OUT.DISABLED)
 
-    def _set_smux(self, smux_addr, smux_out1, smux_out2):
+    def _set_smux(self, smux_addr: int, smux_out1: int, smux_out2: int) -> None:
         """Connect a pair of sensors to an ADC channel"""
         low_nibble = smux_out1
         high_nibble = smux_out2 << 4
@@ -640,22 +665,22 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         self._write_register(smux_addr, smux_byte)
 
     @property
-    def gain(self):
+    def gain(self) -> int:
         """The ADC gain multiplier. Must be a valid :meth:`adafruit_as7341.Gain`"""
         return self._gain
 
     @gain.setter
-    def gain(self, gain_value):
+    def gain(self, gain_value: str) -> None:
         if not Gain.is_valid(gain_value):
             raise AttributeError("`gain` must be a valid `adafruit_as7341.Gain`")
         self._gain = gain_value
 
     @property
-    def _smux_enabled(self):
+    def _smux_enabled(self) -> bool:
         return self._smux_enable_bit
 
     @_smux_enabled.setter
-    def _smux_enabled(self, enable_smux):
+    def _smux_enabled(self, enable_smux: bool):
         self._low_bank_active = False
         self._smux_enable_bit = enable_smux
         while self._smux_enable_bit is True:
@@ -663,7 +688,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
 
     @property
     @_low_bank
-    def led_current(self):
+    def led_current(self) -> int:
         """The maximum allowed current through the attached LED in milliamps.
         Odd numbered values will be rounded down to the next lowest even number due
         to the internal configuration restrictions"""
@@ -672,27 +697,27 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
 
     @led_current.setter
     @_low_bank
-    def led_current(self, led_curent):
-        new_current = int((min(258, max(4, led_curent)) - 4) / 2)
+    def led_current(self, led_current: int) -> None:
+        new_current = int((min(258, max(4, led_current)) - 4) / 2)
         self._led_current_bits = new_current
 
     @property
     @_low_bank
-    def led(self):
+    def led(self) -> bool:
         """The  attached LED. Set to True to turn on, False to turn off"""
         return self._led_enabled
 
     @led.setter
     @_low_bank
-    def led(self, led_on):
+    def led(self, led_on: bool) -> None:
         self._led_enabled = led_on
 
     @property
     @_low_bank
-    def _led_control_enabled(self):
+    def _led_control_enabled(self) -> bool:
         return self._led_control_enable_bit
 
     @_led_control_enabled.setter
     @_low_bank
-    def _led_control_enabled(self, enabled):
+    def _led_control_enabled(self, enabled: bool) -> None:
         self._led_control_enable_bit = enabled
