@@ -325,12 +325,20 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     _all_channels: Struct = Struct(_AS7341_ASTATUS, "<BHHHHHH")
     _led_current_bits: RWBits = RWBits(7, _AS7341_LED, 0)
     _led_enabled = RWBit(_AS7341_LED, 7)
+
     atime: UnaryStruct = UnaryStruct(_AS7341_ATIME, "<B")
     """The integration time step count.
     Total integration time will be ``(ATIME + 1) * (ASTEP + 1) * 2.78µS``
+
+    :rtype: int
     """
+
     astep: UnaryStruct = UnaryStruct(_AS7341_ASTEP_L, "<H")
-    """ The integration time step size in 2.78 microsecond increments"""
+    """The integration time step size in 2.78 microsecond increments
+
+    :rtype: int
+    """
+
     _gain: UnaryStruct = UnaryStruct(_AS7341_CFG1, "<B")
     _data_ready_bit: RWBit = RWBit(_AS7341_STATUS2, 6)
     """
