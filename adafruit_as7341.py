@@ -49,7 +49,9 @@ try:
     # Only needed for typing
     import busio  # pylint: disable=unused-import
 
-    TCallable = TypeVar("TCallable", bound=Callable[..., Any])
+    TCallable = TypeVar(  # pylint: disable=invalid-name
+        "TCallable", bound=Callable[..., Any]
+    )
 
 except ImportError:
     pass
