@@ -5,6 +5,7 @@ import board
 from adafruit_as7341 import AS7341
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
+# i2c = board.STEMMA_I2C()  # For using the built-in STEMMA QT connector on a microcontroller
 sensor = AS7341(i2c)
 sensor.flicker_detection_enabled = True
 
