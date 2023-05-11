@@ -510,7 +510,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     def flicker_detected(self) -> Optional[int]:
         """The flicker frequency detected in Hertz"""
         if not self._flicker_detection_1k_configured:
-            AttributeError(
+            raise AttributeError(
                 "Flicker detection must be enabled to access `flicker_detected`"
             )
         flicker_status = self._fd_status
