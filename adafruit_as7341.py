@@ -352,7 +352,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     def __init__(
         self, i2c_bus: busio.I2C, address: int = _AS7341_I2CADDR_DEFAULT
     ) -> None:
-
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
         if not self._device_id in [_AS7341_DEVICE_ID]:
             raise RuntimeError("Failed to find an AS7341 sensor - check your wiring!")
@@ -454,7 +453,6 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
             sleep(0.001)
 
     def _write_register(self, addr: int, data: int) -> None:
-
         self._buffer[0] = addr
         self._buffer[1] = data
 

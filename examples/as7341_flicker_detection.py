@@ -10,7 +10,6 @@ sensor = AS7341(i2c)
 sensor.flicker_detection_enabled = True
 
 while True:
-
     flicker_detected = sensor.flicker_detected
     if flicker_detected:
         print("Detected a %d Hz flicker" % flicker_detected)
