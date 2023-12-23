@@ -435,13 +435,13 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     @property
     def channel_clear(self) -> int:
         """The current reading for the clear sensor"""
-        self._configure_f5_f8()
+        _ = self._all_channels
         return self._channel_4_data
 
     @property
     def channel_nir(self) -> int:
         """The current reading for the NIR (near-IR) sensor"""
-        self._configure_f5_f8()
+        _ = self._all_channels
         return self._channel_5_data
 
     def _wait_for_data(self, timeout: float = 1.0) -> None:
@@ -463,6 +463,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         """Configure the sensor to read from elements F1-F4, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
         if self._low_channels_configured:
+            _ = self._all_channels
             return
         self._high_channels_configured = False
         self._flicker_detection_1k_configured = False
@@ -486,6 +487,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
         """Configure the sensor to read from elements F5-F8, Clear, and NIR"""
         # disable SP_EN bit while  making config changes
         if self._high_channels_configured:
+            _ = self._all_channels
             return
 
         self._low_channels_configured = False
