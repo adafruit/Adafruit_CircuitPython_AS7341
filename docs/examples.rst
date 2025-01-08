@@ -33,3 +33,12 @@ Example in how to get all the channel readings at the same time
 .. literalinclude:: ../examples/as7341_batched_readings.py
     :caption: examples/as7341_batched_readings.py
     :linenos:
+
+DisplayIO Simpletest
+---------------------
+
+This is a simple test for boards with built-in display.
+
+.. literalinclude:: ../examples/as3741_displayio_simpletest.py
+    :caption: examples/as3741_displayio_simpletest.py
+    :linenos:
