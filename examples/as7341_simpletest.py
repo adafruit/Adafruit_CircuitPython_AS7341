@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: MIT
 from time import sleep
+
 import board
+
 from adafruit_as7341 import AS7341
 
 i2c = board.I2C()  # uses board.SCL and board.SDA

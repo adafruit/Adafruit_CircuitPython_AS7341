@@ -35,23 +35,21 @@ Implementation Notes
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AS7341.git"
 
-from time import sleep, monotonic
-from micropython import const
-from adafruit_bus_device import i2c_device
+from time import monotonic, sleep
 
-from adafruit_register.i2c_struct import UnaryStruct, Struct  # , ROUnaryStruct
+from adafruit_bus_device import i2c_device
 from adafruit_register.i2c_bit import RWBit
 from adafruit_register.i2c_bits import ROBits, RWBits
+from adafruit_register.i2c_struct import Struct, UnaryStruct  # , ROUnaryStruct
+from micropython import const
 
 try:
-    from typing import Tuple, Optional, Any, Callable, TypeVar
+    from typing import Any, Callable, Optional, Tuple, TypeVar
 
     # Only needed for typing
-    import busio  # pylint: disable=unused-import
+    import busio
 
-    TCallable = TypeVar(  # pylint: disable=invalid-name
-        "TCallable", bound=Callable[..., Any]
-    )
+    TCallable = TypeVar("TCallable", bound=Callable[..., Any])
 
 except ImportError:
     pass
@@ -98,21 +96,13 @@ _AS7341_CH5_DATA_L: int = const(0x9F)  # ADC Channel 5 Data
 _AS7341_CH5_DATA_H: int = const(0xA0)  # ADC Channel 5 Data
 _AS7341_STATUS2: int = const(0xA3)  # Measurement status flags; saturation, validity
 _AS7341_STATUS3: int = const(0xA4)  # Spectral interrupt source, high or low threshold
-_AS7341_CFG0: int = const(
-    0xA9
-)  # Sets Low power mode, Register bank, and Trigger lengthening
+_AS7341_CFG0: int = const(0xA9)  # Sets Low power mode, Register bank, and Trigger lengthening
 _AS7341_CFG1: int = const(0xAA)  # Controls ADC Gain
 _AS7341_CFG6: int = const(0xAF)  # Used to configure Smux
 _AS7341_CFG9: int = const(0xB2)  # flicker detect and SMUX command system ints
-_AS7341_CFG12: int = const(
-    0xB5
-)  # ADC channel for interrupts, persistence and auto-gain
-_AS7341_PERS = const(
-    0xBD
-)  # number of measurements outside thresholds to trigger an interrupt
-_AS7341_GPIO2 = const(
-    0xBE
-)  # GPIO Settings and status: polarity, direction, sets output, reads
+_AS7341_CFG12: int = const(0xB5)  # ADC channel for interrupts, persistence and auto-gain
+_AS7341_PERS = const(0xBD)  # number of measurements outside thresholds to trigger an interrupt
+_AS7341_GPIO2 = const(0xBE)  # GPIO Settings and status: polarity, direction, sets output, reads
 _AS7341_ASTEP_L: int = const(0xCA)  # Integration step size ow byte
 _AS7341_ASTEP_H: int = const(0xCB)  # Integration step size high byte
 _AS7341_FD_TIME1: int = const(0xD8)  # Flicker detection integration time low byte
@@ -163,7 +153,7 @@ class CV:
 # class Flicker(CV):
 #     """Options for ``flicker_detection_type``"""
 
-#     pass  # pylint: disable=unnecessary-pass
+#     pass
 
 
 # Flicker.add_values((("FLICKER_100HZ", 0, 100, None), ("FLICKER_1000HZ", 1, 1000, None)))
@@ -349,11 +339,9 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
  * @return true: success false: failure
     """
 
-    def __init__(
-        self, i2c_bus: busio.I2C, address: int = _AS7341_I2CADDR_DEFAULT
-    ) -> None:
+    def __init__(self, i2c_bus: busio.I2C, address: int = _AS7341_I2CADDR_DEFAULT) -> None:
         self.i2c_device = i2c_device.I2CDevice(i2c_bus, address)
-        if not self._device_id in [_AS7341_DEVICE_ID]:
+        if self._device_id not in {_AS7341_DEVICE_ID}:
             raise RuntimeError("Failed to find an AS7341 sensor - check your wiring!")
         self.initialize()
         self._buffer = bytearray(2)
@@ -512,9 +500,7 @@ class AS7341:  # pylint:disable=too-many-instance-attributes, no-member
     def flicker_detected(self) -> Optional[int]:
         """The flicker frequency detected in Hertz"""
         if not self._flicker_detection_1k_configured:
-            raise AttributeError(
-                "Flicker detection must be enabled to access `flicker_detected`"
-            )
+            raise AttributeError("Flicker detection must be enabled to access `flicker_detected`")
         flicker_status = self._fd_status
 
         if flicker_status == 45:
