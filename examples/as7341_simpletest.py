@@ -4,11 +4,13 @@ from time import sleep
 
 import board
 
-from adafruit_as7341 import AS7341
+import adafruit_as7341
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
 # i2c = board.STEMMA_I2C()  # For using the built-in STEMMA QT connector on a microcontroller
-sensor = AS7341(i2c)
+sensor = adafruit_as7341.AS7341(i2c)
+
+sensor.gain = adafruit_as7341.Gain.GAIN_0_5X  # Update the gain of the sensor
 
 
 def bar_graph(read_value):
