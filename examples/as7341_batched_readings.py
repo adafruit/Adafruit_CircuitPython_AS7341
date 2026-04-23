@@ -13,19 +13,19 @@ sensor = AS7341(i2c)
 
 def bar_graph(read_value):
     scaled = int(read_value / 1000)
-    return "[%5d] " % read_value + (scaled * "*")
+    return f"[{read_value:5d}] " + (scaled * "*")
 
 
 while True:
     sensor_channels = sensor.all_channels
-    print("F1 - 415nm/Violet  %s" % bar_graph(sensor_channels[0]))
-    print("F2 - 445nm//Indigo %s" % bar_graph(sensor_channels[1]))
-    print("F3 - 480nm//Blue   %s" % bar_graph(sensor_channels[2]))
-    print("F4 - 515nm//Cyan   %s" % bar_graph(sensor_channels[3]))
-    print("F5 - 555nm/Green   %s" % bar_graph(sensor_channels[4]))
-    print("F6 - 590nm/Yellow  %s" % bar_graph(sensor_channels[5]))
-    print("F7 - 630nm/Orange  %s" % bar_graph(sensor_channels[6]))
-    print("F8 - 680nm/Red     %s" % bar_graph(sensor_channels[7]))
+    print(f"F1 - 415nm/Violet  {bar_graph(sensor_channels[0])}")
+    print(f"F2 - 445nm//Indigo {bar_graph(sensor_channels[1])}")
+    print(f"F3 - 480nm//Blue   {bar_graph(sensor_channels[2])}")
+    print(f"F4 - 515nm//Cyan   {bar_graph(sensor_channels[3])}")
+    print(f"F5 - 555nm/Green   {bar_graph(sensor_channels[4])}")
+    print(f"F6 - 590nm/Yellow  {bar_graph(sensor_channels[5])}")
+    print(f"F7 - 630nm/Orange  {bar_graph(sensor_channels[6])}")
+    print(f"F8 - 680nm/Red     {bar_graph(sensor_channels[7])}")
     print("\n------------------------------------------------")
 
     sleep(1)
